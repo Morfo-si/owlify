@@ -53,5 +53,3 @@ func FetchCurrentSprintIssues(project, component string, sprintNumber int) ([]Ji
 
 	return jiraResponse.Issues, nil
 }
-
-// ... move fetchCurrentSprintIssues, fetchJiraIssues, generateReport, and getWeekDateRange here ...
