@@ -1,9 +1,12 @@
 package reports
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
+	"time"
 
 	"github.com/morfo-si/owlify/pkg/jira"
 )
@@ -12,8 +15,9 @@ import (
 type OutputFormat string
 
 const (
-	TextFormat OutputFormat = "text"
-	JSONFormat OutputFormat = "json"
+	TableFormat OutputFormat = "table"
+	JSONFormat  OutputFormat = "json"
+	CSVFormat   OutputFormat = "csv"
 )
 
 func GenerateTableReport(issues []jira.JiraIssue) {
@@ -47,13 +51,13 @@ func GenerateTableReport(issues []jira.JiraIssue) {
 	// Print rows
 	for _, issue := range issues {
 		fmt.Printf("%-12s", issue.Key)
-		
+
 		summary := issue.Fields.Summary
 		if len(summary) > 25 {
 			summary = summary[:22] + "..."
 		}
 		fmt.Printf("%-28s", summary)
-		
+
 		fmt.Printf("%-15s", issue.Fields.Status.Name)
 		fmt.Printf("%-15s", issue.Fields.Priority.Name)
 		if issue.Fields.DueDate != "" {
@@ -74,11 +78,53 @@ func GenerateJSONReport(issues []jira.JiraIssue) {
 	fmt.Println(string(jsonData))
 }
 
+func GenerateCSVReport(issues []jira.JiraIssue) {
+	timestamp := time.Now().Format("20060102-150405")
+	filename := fmt.Sprintf("owlify-%s.csv", timestamp)
+
+	file, err := os.Create(filename)
+	if err != nil {
+		fmt.Printf("Error creating CSV file: %v\n", err)
+		return
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Write headers
+	headers := []string{"Key", "Summary", "Status", "Priority", "Due Date"}
+	if err := writer.Write(headers); err != nil {
+		fmt.Printf("Error writing CSV headers: %v\n", err)
+		return
+	}
+
+	// Write data rows
+	for _, issue := range issues {
+		row := []string{
+			issue.Key,
+			issue.Fields.Summary,
+			issue.Fields.Status.Name,
+			issue.Fields.Priority.Name,
+			issue.Fields.DueDate,
+		}
+		if err := writer.Write(row); err != nil {
+			fmt.Printf("Error writing CSV row: %v\n", err)
+			return
+		}
+	}
+
+	fmt.Printf("CSV report generated: %s\n", filename)
+
+}
+
 // GenerateOutput creates a report in the specified format
 func GenerateOutput(issues []jira.JiraIssue, format OutputFormat) {
 	switch format {
 	case JSONFormat:
 		GenerateJSONReport(issues)
+	case CSVFormat:
+		GenerateCSVReport(issues)
 	default:
 		GenerateTableReport(issues)
 	}

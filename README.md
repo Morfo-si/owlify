@@ -60,11 +60,26 @@ owlify -p MYPROJECT -c "My Component"
 owlify -p MYPROJECT -s 123
 ```
 
+4. Get issues in JSON format:
+```bash
+owlify -p MYPROJECT -o json
+```
+
+5. Export issues to CSV:
+```bash
+owlify -p MYPROJECT -o csv
+```
+
 ### Flags
 
 - `-p, --project`: JIRA project key (required)
 - `-c, --component`: JIRA component (optional)
 - `-s, --sprint`: Sprint number (optional)
+- `-o, --output`: Output format (optional, defaults to 'table')
+  - Supported formats: 
+    - `table`: Formatted table output
+    - `json`: JSON format
+    - `csv`: Comma-separated values
 
 ## Building from source
 

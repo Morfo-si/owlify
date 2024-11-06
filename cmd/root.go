@@ -41,7 +41,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&component, "component", "c", "", "JIRA component (optional)")
 	rootCmd.PersistentFlags().StringVarP(&project, "project", "p", "", "JIRA project key (required)")
 	rootCmd.PersistentFlags().IntVarP(&sprint, "sprint", "s", 0, "Sprint number (optional)")
-	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "text", "Output format: text or json")
+	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "table", "Output format: table or json or csv")
 
 	viper.BindPFlag("component", rootCmd.PersistentFlags().Lookup("component"))
 	viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))
