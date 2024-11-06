@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"time"
 
-	"github.com/morfo-si/owlify/pkg/jira"
+	"github.com/olekukonko/tablewriter"
 )
 
 // OutputFormat represents the type of report output
@@ -20,112 +19,90 @@ const (
 	CSVFormat   OutputFormat = "csv"
 )
 
-func GenerateTableReport(issues []jira.JiraIssue) {
-	// Create headers slice starting with Key
-	headers := []string{"Key", "Summary", "Status"}
+// GenerateReport generates a report in the specified format for any slice of structs
+func GenerateReport(data interface{}, format OutputFormat) error {
+	// Get the value and verify it's a slice
+	val := reflect.ValueOf(data)
+	if val.Kind() != reflect.Slice {
+		return fmt.Errorf("data must be a slice")
+	}
 
-	// Get all field names from the first issue (if available)
-	if len(issues) > 0 {
+	switch format {
+	case TableFormat:
+		table := tablewriter.NewWriter(os.Stdout)
 
-		// Add remaining field names dynamically
-		// Use reflection to get struct fields
-		v := reflect.ValueOf(issues[0].Fields)
-		t := v.Type()
-		for i := 0; i < t.NumField(); i++ {
-			fieldName := t.Field(i).Name
-			if fieldName != "Key" && fieldName != "Summary" && fieldName != "Status" {
-				headers = append(headers, fieldName)
+		// Get headers from struct fields
+		if val.Len() > 0 {
+			firstItem := val.Index(0)
+			t := firstItem.Type()
+			headers := make([]string, 0)
+
+			for i := 0; i < t.NumField(); i++ {
+				headers = append(headers, t.Field(i).Name)
+			}
+			table.SetHeader(headers)
+		}
+
+		// Add rows
+		for i := 0; i < val.Len(); i++ {
+			item := val.Index(i)
+			row := make([]string, 0)
+
+			for j := 0; j < item.NumField(); j++ {
+				field := item.Field(j)
+				row = append(row, fmt.Sprintf("%v", field.Interface()))
+			}
+			table.Append(row)
+		}
+
+		table.Render()
+
+	case JSONFormat:
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(data); err != nil {
+			return fmt.Errorf("error encoding JSON: %v", err)
+		}
+
+	case CSVFormat:
+		writer := csv.NewWriter(os.Stdout)
+
+		// Write headers
+		if val.Len() > 0 {
+			firstItem := val.Index(0)
+			t := firstItem.Type()
+			headers := make([]string, 0)
+
+			for i := 0; i < t.NumField(); i++ {
+				headers = append(headers, t.Field(i).Name)
+			}
+			if err := writer.Write(headers); err != nil {
+				return fmt.Errorf("error writing CSV headers: %v", err)
 			}
 		}
-	}
 
-	// Print table header
-	fmt.Printf("%-12s", headers[0]) // Key
-	fmt.Printf("%-28s", headers[1]) // Summary (starts at 13)
-	fmt.Printf("%-15s", headers[2]) // Status (starts at 38)
-	for i := 3; i < len(headers); i++ {
-		fmt.Printf("\t%-15s", headers[i])
-	}
-	fmt.Println()
+		// Write rows
+		for i := 0; i < val.Len(); i++ {
+			item := val.Index(i)
+			row := make([]string, 0)
 
-	// Print rows
-	for _, issue := range issues {
-		fmt.Printf("%-12s", issue.Key)
-
-		summary := issue.Fields.Summary
-		if len(summary) > 25 {
-			summary = summary[:22] + "..."
+			for j := 0; j < item.NumField(); j++ {
+				field := item.Field(j)
+				row = append(row, fmt.Sprintf("%v", field.Interface()))
+			}
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("error writing CSV row: %v", err)
+			}
 		}
-		fmt.Printf("%-28s", summary)
 
-		fmt.Printf("%-15s", issue.Fields.Status.Name)
-		fmt.Printf("%-15s", issue.Fields.Priority.Name)
-		if issue.Fields.DueDate != "" {
-			fmt.Printf("\t%-15s", issue.Fields.DueDate)
+		writer.Flush()
+		if err := writer.Error(); err != nil {
+			return fmt.Errorf("error flushing CSV writer: %v", err)
 		}
-		fmt.Println()
-	}
 
-}
-
-// GenerateJSONReport generates a JSON report
-func GenerateJSONReport(issues []jira.JiraIssue) {
-	jsonData, err := json.MarshalIndent(issues, "", "    ")
-	if err != nil {
-		fmt.Printf("Error marshaling JSON: %v\n", err)
-		return
-	}
-	fmt.Println(string(jsonData))
-}
-
-func GenerateCSVReport(issues []jira.JiraIssue) {
-	timestamp := time.Now().Format("20060102-150405")
-	filename := fmt.Sprintf("owlify-%s.csv", timestamp)
-
-	file, err := os.Create(filename)
-	if err != nil {
-		fmt.Printf("Error creating CSV file: %v\n", err)
-		return
-	}
-	defer file.Close()
-
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
-
-	// Write headers
-	headers := []string{"Key", "Summary", "Status", "Priority", "Due Date"}
-	if err := writer.Write(headers); err != nil {
-		fmt.Printf("Error writing CSV headers: %v\n", err)
-		return
-	}
-
-	// Write data rows
-	for _, issue := range issues {
-		row := []string{
-			issue.Key,
-			issue.Fields.Summary,
-			issue.Fields.Status.Name,
-			issue.Fields.Priority.Name,
-			issue.Fields.DueDate,
-		}
-		if err := writer.Write(row); err != nil {
-			fmt.Printf("Error writing CSV row: %v\n", err)
-			return
-		}
-	}
-
-	fmt.Printf("CSV report generated: %s\n", filename)
-
-}
-
-// GenerateOutput creates a report in the specified format
-func GenerateOutput(issues []jira.JiraIssue, format OutputFormat) {
-	switch format {
-	case JSONFormat:
-		GenerateJSONReport(issues)
-	case CSVFormat:
-		GenerateCSVReport(issues)
 	default:
-		GenerateTableReport(issues)
+		return fmt.Errorf("unsupported output format: %s", format)
 	}
+
+	return nil
 }

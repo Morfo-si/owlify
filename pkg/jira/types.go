@@ -18,3 +18,39 @@ type JiraIssue struct {
 type JiraResponse struct {
 	Issues []JiraIssue `json:"issues"`
 }
+
+type Sprint struct {
+	ID            int    `json:"id"`
+	Self          string `json:"self"`
+	State         string `json:"state"`
+	Name          string `json:"name"`
+	StartDate     string `json:"startDate"`
+	EndDate       string `json:"endDate"`
+	ActivatedDate string `json:"activatedDate"`
+	OriginBoardId int    `json:"originBoardId"`
+	// Goal          string `json:"goal"`
+	Synced        bool   `json:"synced"`
+	AutoStartStop bool   `json:"autoStartStop"`
+}
+
+type SprintResponse struct {
+	MaxResults int      `json:"maxResults"`
+	StartAt    int      `json:"startAt"`
+	IsLast     bool     `json:"isLast"`
+	Values     []Sprint `json:"values"`
+}
+
+type Board struct {
+	ID   int    `json:"id"`
+	Self string `json:"self"`
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+type BoardResponse struct {
+	MaxResults int     `json:"maxResults"`
+	StartAt    int     `json:"startAt"`
+	Total      int     `json:"total"`
+	IsLast     bool    `json:"isLast"`
+	Values     []Board `json:"values"`
+}

@@ -25,7 +25,7 @@ func init() {
 	}
 
 	// Get values from either .env file or environment variables
-	jiraBaseURL = fmt.Sprintf("%s/rest/api/2/search", getEnvOrPanic("JIRA_BASE_URL"))
+	jiraBaseURL = getEnvOrPanic("JIRA_BASE_URL")
 	jiraUsername = getEnvOrPanic("JIRA_USERNAME")
 	jiraToken = getEnvOrPanic("JIRA_TOKEN")
 }
@@ -57,7 +57,7 @@ func FetchCurrentSprintIssues(project, component string, sprintNumber int) ([]Ji
 		jql += fmt.Sprintf(" AND project = '%s'", project)
 	}
 
-	url := fmt.Sprintf("%s?jql=%s", jiraBaseURL, url.QueryEscape(jql))
+	url := fmt.Sprintf("%s/rest/api/2/search?jql=%s", jiraBaseURL, url.QueryEscape(jql))
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

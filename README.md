@@ -7,6 +7,7 @@ A CLI tool to fetch and format JIRA issues.
 ### Commands
 
 - `sprint`: Fetch JIRA issues from sprints
+  - `list`: List all open sprints
 
 ### Sprint Command Flags
 
@@ -18,6 +19,24 @@ A CLI tool to fetch and format JIRA issues.
     - `table`: Formatted table output
     - `json`: JSON format
     - `csv`: Comma-separated values
+
+### Sprint List Command
+```bash
+owlify sprint list -p PROJECT -c COMPONENT [-o FORMAT]
+```
+
+Required flags:
+- `-p, --project`: JIRA project key
+- `-c, --component`: JIRA component
+
+Optional flags:
+- `-o, --output`: Output format (defaults to 'table')
+  - Supported formats: `table`, `json`, `csv`
+
+Example:
+```bash
+owlify sprint list -p MYPROJECT -c "My Component"
+```
 
 ### Examples
 
