@@ -15,9 +15,15 @@ var (
 	project   string
 	sprint    int
 	output    string
-	rootCmd   = &cobra.Command{
+
+	rootCmd = &cobra.Command{
 		Use:   "owlify",
 		Short: "A CLI tool to fetch JIRA issues",
+	}
+
+	sprintCmd = &cobra.Command{
+		Use:   "sprint",
+		Short: "Fetch JIRA issues from sprints",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if project == "" {
 				return fmt.Errorf("project is required")
@@ -38,15 +44,18 @@ var (
 )
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&component, "component", "c", "", "JIRA component (optional)")
-	rootCmd.PersistentFlags().StringVarP(&project, "project", "p", "", "JIRA project key (required)")
-	rootCmd.PersistentFlags().IntVarP(&sprint, "sprint", "s", 0, "Sprint number (optional)")
-	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "table", "Output format: table or json or csv")
+	sprintCmd.Flags().StringVarP(&component, "component", "c", "", "JIRA component (optional)")
+	sprintCmd.Flags().StringVarP(&project, "project", "p", "", "JIRA project key (required)")
+	sprintCmd.Flags().IntVarP(&sprint, "sprint", "s", 0, "Sprint number (optional)")
+	sprintCmd.Flags().StringVarP(&output, "output", "o", "table", "Output format: table or json or csv")
 
-	viper.BindPFlag("component", rootCmd.PersistentFlags().Lookup("component"))
-	viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))
-	viper.BindPFlag("sprint", rootCmd.PersistentFlags().Lookup("sprint"))
-	viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output"))
+	// Add sprint command to root
+	rootCmd.AddCommand(sprintCmd)
+
+	viper.BindPFlag("component", sprintCmd.Flags().Lookup("component"))
+	viper.BindPFlag("project", sprintCmd.Flags().Lookup("project"))
+	viper.BindPFlag("sprint", sprintCmd.Flags().Lookup("sprint"))
+	viper.BindPFlag("output", sprintCmd.Flags().Lookup("output"))
 }
 
 // Execute executes the root command
