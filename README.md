@@ -3,7 +3,7 @@ Keep yourself informed about your tasks with Owlify.
 
 ## Configuration
 
-The following environment variables need to be set:
+Configuration can be provided either through environment variables or a `.env` file in the project root. If both exist, the `.env` file takes precedence.
 
 ### Required
 
@@ -19,6 +19,16 @@ export JIRA_TOKEN="your-api-token" # Your JIRA API token
 export JIRA_PROJECT="your-project-key" # Your JIRA project key
 export JIRA_COMPONENT="your-component-key" # Your JIRA component key
 ```
+
+### Using .env file:
+Create a `.env` file in the project root:
+```env
+JIRA_BASE_URL="https://your-jira-instance.com"
+JIRA_USERNAME="your.username"
+JIRA_TOKEN="your-api-token"
+```
+
+Note: Make sure not to commit your `.env` file to version control as it may contain sensitive information.
 
 ## Usage
 

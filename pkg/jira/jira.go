@@ -7,9 +7,37 @@ import (
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
-var jiraBaseURL = fmt.Sprintf("%s/rest/api/2/search", os.Getenv("JIRA_BASE_URL"))
+var (
+	jiraBaseURL  string
+	jiraUsername string
+	jiraToken    string
+)
+
+func init() {
+	// Try to load .env file from the current directory
+	if err := godotenv.Load(); err != nil {
+		// If .env doesn't exist, that's fine - we'll use environment variables
+		fmt.Fprintf(os.Stderr, "Note: .env file not found, using environment variables\n")
+	}
+
+	// Get values from either .env file or environment variables
+	jiraBaseURL = fmt.Sprintf("%s/rest/api/2/search", getEnvOrPanic("JIRA_BASE_URL"))
+	jiraUsername = getEnvOrPanic("JIRA_USERNAME")
+	jiraToken = getEnvOrPanic("JIRA_TOKEN")
+}
+
+// getEnvOrPanic retrieves an environment variable or panics if it's not set
+func getEnvOrPanic(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		panic(fmt.Sprintf("%s must be set in environment or .env file", key))
+	}
+	return value
+}
 
 func FetchCurrentSprintIssues(project, component string, sprintNumber int) ([]JiraIssue, error) {
 	var jql string
@@ -36,7 +64,7 @@ func FetchCurrentSprintIssues(project, component string, sprintNumber int) ([]Ji
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("JIRA_API_TOKEN")))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", jiraToken))
 	req.Header.Set("Accept", "application/json")
 
 	client := &http.Client{Timeout: 10 * time.Second}
