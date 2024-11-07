@@ -27,6 +27,7 @@ func init() {
 	rootCmd.AddCommand(sprintCmd)
 	rootCmd.AddCommand(boardCmd)
 	rootCmd.AddCommand(jqlCmd)
+	rootCmd.AddCommand(issueCmd)
 
 	viper.BindPFlag("component", rootCmd.PersistentFlags().Lookup("component"))
 	viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))
