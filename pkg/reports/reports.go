@@ -56,29 +56,19 @@ func GenerateReport(data interface{}, format OutputFormat) error {
 	case CSVFormat:
 		writer := csv.NewWriter(os.Stdout)
 
-		// Write headers
+		// Write flattened headers
 		if val.Len() > 0 {
 			firstItem := val.Index(0)
-			t := firstItem.Type()
-			headers := make([]string, 0)
-
-			for i := 0; i < t.NumField(); i++ {
-				headers = append(headers, t.Field(i).Name)
-			}
+			headers := getFlattenedHeaders(firstItem.Type(), "")
 			if err := writer.Write(headers); err != nil {
 				return fmt.Errorf("error writing CSV headers: %v", err)
 			}
 		}
 
-		// Write rows
+		// Write rows with flattened values
 		for i := 0; i < val.Len(); i++ {
 			item := val.Index(i)
-			row := make([]string, 0)
-
-			for j := 0; j < item.NumField(); j++ {
-				field := item.Field(j)
-				row = append(row, fmt.Sprintf("%v", field.Interface()))
-			}
+			row := getFlattenedValues(item)
 			if err := writer.Write(row); err != nil {
 				return fmt.Errorf("error writing CSV row: %v", err)
 			}
