@@ -26,7 +26,6 @@ var (
 				return
 			}
 
-			fmt.Printf("Issue: %+v\n", issue)
 			reports.GenerateReport(issue, reports.OutputFormat(output))
 		},
 	}
