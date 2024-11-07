@@ -26,6 +26,7 @@ func init() {
 	// Add sprint command to root
 	rootCmd.AddCommand(sprintCmd)
 	rootCmd.AddCommand(boardCmd)
+	rootCmd.AddCommand(jqlCmd)
 
 	viper.BindPFlag("component", rootCmd.PersistentFlags().Lookup("component"))
 	viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))

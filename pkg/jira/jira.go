@@ -39,7 +39,7 @@ func getEnvOrPanic(key string) string {
 	return value
 }
 
-func FetchCurrentSprintIssues(project, component string, sprintNumber int) ([]JiraIssue, error) {
+func FetchCurrentSprintIssues(project, component string, sprintNumber int) ([]Issue, error) {
 	var jql string
 
 	// If no sprint number is provided, fetch issues from all open sprints

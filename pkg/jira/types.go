@@ -1,7 +1,7 @@
 package jira
 
-// JiraIssue represents a JIRA issue
-type JiraIssue struct {
+// Issue represents a JIRA issue
+type Issue struct {
 	Key    string `json:"key"`
 	Fields struct {
 		Summary  string `json:"summary"`
@@ -16,7 +16,7 @@ type JiraIssue struct {
 }
 
 type JiraResponse struct {
-	Issues []JiraIssue `json:"issues"`
+	Issues []Issue `json:"issues"`
 }
 
 type Sprint struct {
@@ -29,8 +29,8 @@ type Sprint struct {
 	ActivatedDate string `json:"activatedDate"`
 	OriginBoardId int    `json:"originBoardId"`
 	// Goal          string `json:"goal"`
-	Synced        bool   `json:"synced"`
-	AutoStartStop bool   `json:"autoStartStop"`
+	Synced        bool `json:"synced"`
+	AutoStartStop bool `json:"autoStartStop"`
 }
 
 type SprintResponse struct {
