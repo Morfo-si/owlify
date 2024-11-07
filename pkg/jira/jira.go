@@ -15,6 +15,8 @@ var (
 	jiraBaseURL  string
 	jiraUsername string
 	jiraToken    string
+	httpProxy    string
+	httpsProxy   string
 )
 
 func init() {
@@ -28,6 +30,16 @@ func init() {
 	jiraBaseURL = getEnvOrPanic("JIRA_BASE_URL")
 	jiraUsername = getEnvOrPanic("JIRA_USERNAME")
 	jiraToken = getEnvOrPanic("JIRA_TOKEN")
+
+	// Get proxy settings from environment
+	httpProxy = os.Getenv("HTTP_PROXY")
+	if httpProxy == "" {
+		httpProxy = os.Getenv("http_proxy")
+	}
+	httpsProxy = os.Getenv("HTTPS_PROXY")
+	if httpsProxy == "" {
+		httpsProxy = os.Getenv("https_proxy")
+	}
 }
 
 // getEnvOrPanic retrieves an environment variable or panics if it's not set
@@ -39,45 +51,37 @@ func getEnvOrPanic(key string) string {
 	return value
 }
 
-func FetchCurrentSprintIssues(project, component string, sprintNumber int) ([]Issue, error) {
-	var jql string
-
-	// If no sprint number is provided, fetch issues from all open sprints
-	if sprintNumber == 0 {
-		jql = "sprint in openSprints()"
+func makeGetRequest(reqUrl string, target interface{}) error {
+	// Create transport with proxy support
+	fmt.Printf("httpProxy: %v\n", reqUrl)
+	transport := &http.Transport{}
+	if httpProxy != "" || httpsProxy != "" {
+		transport.Proxy = http.ProxyFromEnvironment
 	} else {
-		jql = fmt.Sprintf("sprint = %d", sprintNumber)
+		proxy, err := url.Parse(httpProxy)
+		if err != nil {
+			return err
+		}
+		transport.Proxy = http.ProxyURL(proxy)
 	}
 
-	if component != "" {
-		jql += fmt.Sprintf(" AND component = '%s'", component)
+	client := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: transport,
 	}
-
-	if project != "" {
-		jql += fmt.Sprintf(" AND project = '%s'", project)
-	}
-
-	url := fmt.Sprintf("%s/rest/api/2/search?jql=%s", jiraBaseURL, url.QueryEscape(jql))
-
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", jiraToken))
 	req.Header.Set("Accept", "application/json")
 
-	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
 
-	var jiraResponse JiraResponse
-	if err := json.NewDecoder(resp.Body).Decode(&jiraResponse); err != nil {
-		return nil, err
-	}
-
-	return jiraResponse.Issues, nil
+	return json.NewDecoder(resp.Body).Decode(target)
 }
