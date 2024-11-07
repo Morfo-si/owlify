@@ -53,7 +53,6 @@ func getEnvOrPanic(key string) string {
 
 func makeGetRequest(reqUrl string, target interface{}) error {
 	// Create transport with proxy support
-	fmt.Printf("httpProxy: %v\n", reqUrl)
 	transport := &http.Transport{}
 	if httpProxy != "" || httpsProxy != "" {
 		transport.Proxy = http.ProxyFromEnvironment

@@ -21,7 +21,6 @@ const (
 
 // GenerateReport generates a report in the specified format for any slice of structs
 func GenerateReport(data interface{}, format OutputFormat) error {
-	// Get the value and verify it's a slice
 	val := reflect.ValueOf(data)
 	if val.Kind() != reflect.Slice {
 		return fmt.Errorf("data must be a slice")
@@ -31,27 +30,17 @@ func GenerateReport(data interface{}, format OutputFormat) error {
 	case TableFormat:
 		table := tablewriter.NewWriter(os.Stdout)
 
-		// Get headers from struct fields
+		// Get flattened headers from struct fields
 		if val.Len() > 0 {
 			firstItem := val.Index(0)
-			t := firstItem.Type()
-			headers := make([]string, 0)
-
-			for i := 0; i < t.NumField(); i++ {
-				headers = append(headers, t.Field(i).Name)
-			}
+			headers := getFlattenedHeaders(firstItem.Type(), "")
 			table.SetHeader(headers)
 		}
 
-		// Add rows
+		// Add rows with flattened values
 		for i := 0; i < val.Len(); i++ {
 			item := val.Index(i)
-			row := make([]string, 0)
-
-			for j := 0; j < item.NumField(); j++ {
-				field := item.Field(j)
-				row = append(row, fmt.Sprintf("%v", field.Interface()))
-			}
+			row := getFlattenedValues(item)
 			table.Append(row)
 		}
 
@@ -105,4 +94,40 @@ func GenerateReport(data interface{}, format OutputFormat) error {
 	}
 
 	return nil
+}
+
+// getFlattenedHeaders returns a slice of headers for all fields including nested structs
+func getFlattenedHeaders(t reflect.Type, prefix string) []string {
+	var headers []string
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		if field.Type.Kind() == reflect.Struct {
+			// Recursively get headers for nested struct
+			nestedHeaders := getFlattenedHeaders(field.Type, field.Name+".")
+			headers = append(headers, nestedHeaders...)
+		} else {
+			header := field.Name
+			if prefix != "" {
+				header = prefix + header
+			}
+			headers = append(headers, header)
+		}
+	}
+	return headers
+}
+
+// getFlattenedValues returns a slice of values for all fields including nested structs
+func getFlattenedValues(v reflect.Value) []string {
+	var values []string
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		if field.Kind() == reflect.Struct {
+			// Recursively get values for nested struct
+			nestedValues := getFlattenedValues(field)
+			values = append(values, nestedValues...)
+		} else {
+			values = append(values, fmt.Sprintf("%v", field.Interface()))
+		}
+	}
+	return values
 }
