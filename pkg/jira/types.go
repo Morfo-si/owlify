@@ -2,6 +2,7 @@ package jira
 
 // Issue represents a JIRA issue
 type Issue struct {
+	ID     string `json:"id"`
 	Key    string `json:"key"`
 	Fields struct {
 		Summary  string `json:"summary"`
@@ -53,4 +54,19 @@ type BoardResponse struct {
 	Total      int     `json:"total"`
 	IsLast     bool    `json:"isLast"`
 	Values     []Board `json:"values"`
+}
+
+type TransitionResponse struct {
+	Transitions []Transition `json:"transitions"`
+}
+
+type Transition struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type UpdateTransition struct {
+	Transition struct {
+		ID string `json:"id"`
+	} `json:"transition"`
 }

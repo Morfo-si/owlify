@@ -1,6 +1,7 @@
 package jira
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -83,4 +84,45 @@ func makeGetRequest(reqUrl string, target interface{}) error {
 	defer resp.Body.Close()
 
 	return json.NewDecoder(resp.Body).Decode(target)
+}
+
+func makePostRequest(reqUrl string, payload interface{}) error {
+	// Create transport with proxy support
+	transport := &http.Transport{}
+	if httpProxy != "" || httpsProxy != "" {
+		transport.Proxy = http.ProxyFromEnvironment
+	} else {
+		proxy, err := url.Parse(httpProxy)
+		if err != nil {
+			return err
+		}
+		transport.Proxy = http.ProxyURL(proxy)
+	}
+
+	client := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: transport,
+	}
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", jiraToken))
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
 }
