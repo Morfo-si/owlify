@@ -49,7 +49,7 @@ func UpdateIssueStatus(issueKey string, newStatus string) error {
 	}
 
 	url := fmt.Sprintf("%s/rest/api/2/issue/%s/transitions", jiraBaseURL, issue[0].ID)
-	if err := makePostRequest(url, payload); err != nil {
+	if err := makePostRequest(url, payload, nil); err != nil {
 		return fmt.Errorf("error transitioning issue: %v", err)
 	}
 

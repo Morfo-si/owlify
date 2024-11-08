@@ -86,7 +86,7 @@ func makeGetRequest(reqUrl string, target interface{}) error {
 	return json.NewDecoder(resp.Body).Decode(target)
 }
 
-func makePostRequest(reqUrl string, payload interface{}) error {
+func makePostRequest(reqUrl string, payload interface{}, target interface{}) error {
 	// Create transport with proxy support
 	transport := &http.Transport{}
 	if httpProxy != "" || httpsProxy != "" {
@@ -123,6 +123,10 @@ func makePostRequest(reqUrl string, payload interface{}) error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if target != nil {
+		return json.NewDecoder(resp.Body).Decode(target)
+	}
 
 	return nil
 }
