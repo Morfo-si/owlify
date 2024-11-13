@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"time"
 
@@ -57,17 +56,19 @@ func makeGetRequest(reqUrl string, target interface{}) error {
 	transport := &http.Transport{}
 	if httpProxy != "" || httpsProxy != "" {
 		transport.Proxy = http.ProxyFromEnvironment
-	} else {
-		proxy, err := url.Parse(httpProxy)
-		if err != nil {
-			return err
-		}
-		transport.Proxy = http.ProxyURL(proxy)
 	}
 
-	client := &http.Client{
-		Timeout:   10 * time.Second,
-		Transport: transport,
+	// Only set transport if proxy configuration exists
+	var client *http.Client
+	if transport.Proxy != nil {
+		client = &http.Client{
+			Timeout:   10 * time.Second,
+			Transport: transport,
+		}
+	} else {
+		client = &http.Client{
+			Timeout: 10 * time.Second,
+		}
 	}
 	req, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
@@ -91,17 +92,19 @@ func makePostRequest(reqUrl string, payload interface{}, target interface{}) err
 	transport := &http.Transport{}
 	if httpProxy != "" || httpsProxy != "" {
 		transport.Proxy = http.ProxyFromEnvironment
-	} else {
-		proxy, err := url.Parse(httpProxy)
-		if err != nil {
-			return err
-		}
-		transport.Proxy = http.ProxyURL(proxy)
 	}
 
-	client := &http.Client{
-		Timeout:   10 * time.Second,
-		Transport: transport,
+	// Only set transport if proxy configuration exists
+	var client *http.Client
+	if transport.Proxy != nil {
+		client = &http.Client{
+			Timeout:   10 * time.Second,
+			Transport: transport,
+		}
+	} else {
+		client = &http.Client{
+			Timeout: 10 * time.Second,
+		}
 	}
 
 	jsonPayload, err := json.Marshal(payload)
