@@ -21,9 +21,39 @@ var (
 
 func init() {
 	// Try to load .env file from the current directory
+	// Try to load .env from current directory first
+	var envPath string
+
 	if err := godotenv.Load(); err != nil {
-		// If .env doesn't exist, that's fine - we'll use environment variables
-		fmt.Fprintf(os.Stderr, "Note: .env file not found, using environment variables\n")
+		// If .env doesn't exist, try to create one in XDG config dir
+		configDir, err := os.UserConfigDir()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error getting config directory: %v\n", err)
+			appConfigDir := fmt.Sprintf("%s/owlify", configDir)
+			if err := os.MkdirAll(appConfigDir, 0755); err != nil {
+				fmt.Fprintf(os.Stderr, "Error creating config directory: %v\n", err)
+				return
+			}
+			exampleEnv, err := os.ReadFile(".env.example")
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error reading .env.example: %v\n", err)
+				return
+			}
+
+			if err := os.WriteFile(envPath, exampleEnv, 0600); err != nil {
+				fmt.Fprintf(os.Stderr, "Error creating .env file: %v\n", err)
+				return
+			}
+
+			fmt.Printf("Created new .env file at %s. Please edit it with your credentials.\n", envPath)
+
+		}
+
+		envPath := fmt.Sprintf("%s/owlify/.env", configDir)
+		if err := godotenv.Load(envPath); err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading .env file: %v\n", err)
+			return
+		}
 	}
 
 	// Get values from either .env file or environment variables
