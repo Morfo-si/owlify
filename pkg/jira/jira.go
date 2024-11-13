@@ -51,25 +51,29 @@ func getEnvOrPanic(key string) string {
 	return value
 }
 
-func makeGetRequest(reqUrl string, target interface{}) error {
-	// Create transport with proxy support
+// createHTTPClient creates an http.Client with proxy support if configured
+func createHTTPClient() *http.Client {
 	transport := &http.Transport{}
 	if httpProxy != "" || httpsProxy != "" {
 		transport.Proxy = http.ProxyFromEnvironment
 	}
 
-	// Only set transport if proxy configuration exists
-	var client *http.Client
 	if transport.Proxy != nil {
-		client = &http.Client{
+		return &http.Client{
 			Timeout:   10 * time.Second,
 			Transport: transport,
 		}
-	} else {
-		client = &http.Client{
-			Timeout: 10 * time.Second,
-		}
 	}
+
+	return &http.Client{
+		Timeout: 10 * time.Second,
+	}
+}
+
+func makeGetRequest(reqUrl string, target interface{}) error {
+	// Replace client creation with new function
+	client := createHTTPClient()
+
 	req, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		return err
@@ -88,24 +92,8 @@ func makeGetRequest(reqUrl string, target interface{}) error {
 }
 
 func makePostRequest(reqUrl string, payload interface{}, target interface{}) error {
-	// Create transport with proxy support
-	transport := &http.Transport{}
-	if httpProxy != "" || httpsProxy != "" {
-		transport.Proxy = http.ProxyFromEnvironment
-	}
-
-	// Only set transport if proxy configuration exists
-	var client *http.Client
-	if transport.Proxy != nil {
-		client = &http.Client{
-			Timeout:   10 * time.Second,
-			Transport: transport,
-		}
-	} else {
-		client = &http.Client{
-			Timeout: 10 * time.Second,
-		}
-	}
+	// Replace client creation with new function
+	client := createHTTPClient()
 
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
