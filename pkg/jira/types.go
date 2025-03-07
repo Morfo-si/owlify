@@ -6,6 +6,10 @@ type Issue struct {
 	Key    string `json:"key"`
 	Fields struct {
 		Summary  string `json:"summary"`
+		Assignee struct {
+			Name string `json:"name"`
+		} `json:"assignee"`
+		StoryPoint float64 `json:"customfield_12310243"`
 		DueDate  string `json:"duedate"`
 		Priority struct {
 			Name string `json:"name"`

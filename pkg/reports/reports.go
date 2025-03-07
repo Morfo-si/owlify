@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/olekukonko/tablewriter"
 )
@@ -91,14 +92,47 @@ func getFlattenedHeaders(t reflect.Type, prefix string) []string {
 	var headers []string
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
+		jsonTag := field.Tag.Get("json")
+
+		if jsonTag == "-" {
+			continue
+		}
+
+		// Get the field name from JSON tag or use struct field name
+		fieldName := field.Name
+		if jsonTag != "" {
+			// Split the json tag to get the name part (before any comma)
+			parts := strings.Split(jsonTag, ",")
+			if parts[0] != "" {
+				fieldName = parts[0]
+			}
+		}
+
+		// Skip "fields" prefix for better readability
+		if fieldName == "fields" {
+			nestedHeaders := getFlattenedHeaders(field.Type, "")
+			headers = append(headers, nestedHeaders...)
+			continue
+		}
+
 		if field.Type.Kind() == reflect.Struct {
 			// Recursively get headers for nested struct
-			nestedHeaders := getFlattenedHeaders(field.Type, field.Name+".")
+			nestedPrefix := prefix
+			if prefix != "" {
+				nestedPrefix = prefix + fieldName + "."
+			} else {
+				nestedPrefix = fieldName + "."
+			}
+			nestedHeaders := getFlattenedHeaders(field.Type, nestedPrefix)
 			headers = append(headers, nestedHeaders...)
 		} else {
-			header := field.Name
+			header := fieldName
 			if prefix != "" {
 				header = prefix + header
+			}
+			// Capitalize first letter for better readability
+			if len(header) > 0 {
+				header = strings.ToUpper(header[:1]) + header[1:]
 			}
 			headers = append(headers, header)
 		}
@@ -109,14 +143,40 @@ func getFlattenedHeaders(t reflect.Type, prefix string) []string {
 // getFlattenedValues returns a slice of values for all fields including nested structs
 func getFlattenedValues(v reflect.Value) []string {
 	var values []string
+	t := v.Type()
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
+		jsonTag := t.Field(i).Tag.Get("json")
+
+		if jsonTag == "-" {
+			continue
+		}
+
+		fieldName := t.Field(i).Name
+		if jsonTag != "" {
+			parts := strings.Split(jsonTag, ",")
+			if parts[0] != "" {
+				fieldName = parts[0]
+			}
+		}
+
+		// Skip "fields" struct level
+		if fieldName == "fields" {
+			nestedValues := getFlattenedValues(field)
+			values = append(values, nestedValues...)
+			continue
+		}
+
 		if field.Kind() == reflect.Struct {
 			// Recursively get values for nested struct
 			nestedValues := getFlattenedValues(field)
 			values = append(values, nestedValues...)
 		} else {
-			values = append(values, fmt.Sprintf("%v", field.Interface()))
+			val := field.Interface()
+			if field.Kind() == reflect.Ptr && !field.IsNil() {
+				val = field.Elem().Interface()
+			}
+			values = append(values, fmt.Sprintf("%v", val))
 		}
 	}
 	return values
