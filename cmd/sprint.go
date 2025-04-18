@@ -12,7 +12,6 @@ import (
 var (
 	boardId int
 
-
 	sprintCmd = &cobra.Command{
 		Use:   "sprint",
 		Short: "Fetch JIRA issues from sprints",
@@ -21,7 +20,7 @@ var (
 				return fmt.Errorf("project is required")
 			}
 
-			issues, err := jira.FetchCurrentSprintIssues(project, component, sprint)
+			issues, err := jira.FetchCurrentSprintIssues(project, component, sprint, jira.JIRAGetRequest)
 			if err != nil {
 				return fmt.Errorf("error fetching JIRA issues: %v", err)
 			}
@@ -42,7 +41,7 @@ var (
 				return fmt.Errorf("boardId is required")
 			}
 
-			sprints, err := jira.FetchOpenSprints(boardId)
+			sprints, err := jira.FetchOpenSprints(boardId, jira.JIRAGetRequest)
 			if err != nil {
 				return fmt.Errorf("error fetching sprints: %v", err)
 			}

@@ -17,7 +17,7 @@ var (
 			if jql == "" {
 				return fmt.Errorf("jql is required")
 			}
-			issues, err := jira.FetchIssuesFromJQL(jql)
+			issues, err := jira.FetchIssuesFromJQL(jql, jira.JIRAGetRequest)
 			if err != nil {
 				return fmt.Errorf("error fetching JIRA issues: %v", err)
 			}
