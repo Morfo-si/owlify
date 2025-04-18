@@ -21,7 +21,9 @@ var (
 			if err != nil {
 				return fmt.Errorf("error fetching JIRA issues: %v", err)
 			}
-			reports.GenerateReport(issues, reports.OutputFormat(output))
+			if err := reports.GenerateReport(issues, reports.OutputFormat(output)); err != nil {
+				return fmt.Errorf("error generating report: %v", err)
+			}
 			return nil
 		},
 	}
@@ -29,5 +31,7 @@ var (
 
 func init() {
 	jqlCmd.Flags().StringVarP(&jql, "jql", "j", "", "JQL query (required)")
-	jqlCmd.MarkFlagRequired("jql")
+	if err := jqlCmd.MarkFlagRequired("jql"); err != nil {
+		fmt.Printf("Error marking jql flag as required: %v\n", err)
+	}
 }

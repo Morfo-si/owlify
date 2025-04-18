@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -29,10 +31,18 @@ func init() {
 	rootCmd.AddCommand(jqlCmd)
 	rootCmd.AddCommand(issueCmd)
 
-	viper.BindPFlag("component", rootCmd.PersistentFlags().Lookup("component"))
-	viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))
-	viper.BindPFlag("sprint", rootCmd.PersistentFlags().Lookup("sprint"))
-	viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output"))
+	if err := viper.BindPFlag("component", rootCmd.PersistentFlags().Lookup("component")); err != nil {
+		fmt.Printf("Error binding component flag: %v\n", err)
+	}
+	if err := viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project")); err != nil {
+		fmt.Printf("Error binding project flag: %v\n", err)
+	}
+	if err := viper.BindPFlag("sprint", rootCmd.PersistentFlags().Lookup("sprint")); err != nil {
+		fmt.Printf("Error binding sprint flag: %v\n", err)
+	}
+	if err := viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output")); err != nil {
+		fmt.Printf("Error binding output flag: %v\n", err)
+	}
 }
 
 // Execute executes the root command

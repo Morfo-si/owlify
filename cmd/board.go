@@ -26,7 +26,9 @@ var (
 			if err != nil {
 				return fmt.Errorf("error fetching boards: %v", err)
 			}
-			reports.GenerateReport(boards, reports.OutputFormat(output))
+			if err := reports.GenerateReport(boards, reports.OutputFormat(output)); err != nil {
+				return fmt.Errorf("error generating report: %v", err)
+			}
 			return nil
 		},
 	}

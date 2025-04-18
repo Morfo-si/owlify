@@ -25,7 +25,9 @@ var (
 				return fmt.Errorf("error fetching JIRA issues: %v", err)
 			}
 			if len(issues) > 0 {
-				reports.GenerateReport(issues, reports.OutputFormat(output))
+				if err := reports.GenerateReport(issues, reports.OutputFormat(output)); err != nil {
+					return fmt.Errorf("error generating report: %v", err)
+				}
 			} else {
 				fmt.Println("No issues found for the specified criteria.")
 			}
@@ -46,7 +48,9 @@ var (
 				return fmt.Errorf("error fetching sprints: %v", err)
 			}
 
-			reports.GenerateReport(sprints, reports.OutputFormat(output))
+			if err := reports.GenerateReport(sprints, reports.OutputFormat(output)); err != nil {
+				return fmt.Errorf("error generating report: %v", err)
+			}
 			return nil
 		},
 	}
@@ -60,5 +64,7 @@ func init() {
 	sprintListCmd.Flags().IntVarP(&boardId, "boardId", "b", 0, "JIRA board ID (required)")
 
 	// Mark flags as required
-	sprintListCmd.MarkFlagRequired("boardId")
+	if err := sprintListCmd.MarkFlagRequired("boardId"); err != nil {
+		fmt.Printf("Error marking boardId flag as required: %v\n", err)
+	}
 }

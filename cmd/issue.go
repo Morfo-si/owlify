@@ -27,7 +27,10 @@ var (
 				return
 			}
 
-			reports.GenerateReport(issue, reports.OutputFormat(output))
+			if err := reports.GenerateReport(issue, reports.OutputFormat(output)); err != nil {
+				fmt.Printf("Error generating report: %v\n", err)
+				return
+			}
 		},
 	}
 
@@ -49,14 +52,28 @@ var (
 				fmt.Printf("Error updating issue %s status to %s: %v\n", issueKey, newStatus, err)
 				return
 			}
-
 			fmt.Printf("Successfully updated issue %s status to %s\n", issueKey, newStatus)
 		},
 	}
 )
 
 func init() {
-	issueCmd.PersistentFlags().StringVarP(&issueKey, "issue", "i", "", "JIRA issue key")
-	updateCmd.Flags().StringVar(&newStatus, "status", "", "New status for the issue")
+	issueCmd.Flags().StringVarP(&issueKey, "key", "k", "", "JIRA issue key (required)")
+	if err := issueCmd.MarkFlagRequired("key"); err != nil {
+		fmt.Printf("Error marking key flag as required: %v\n", err)
+		return
+	}
+
+	updateCmd.Flags().StringVarP(&issueKey, "key", "k", "", "JIRA issue key (required)")
+	updateCmd.Flags().StringVarP(&newStatus, "status", "s", "", "New status (required)")
+	if err := updateCmd.MarkFlagRequired("key"); err != nil {
+		fmt.Printf("Error marking key flag as required: %v\n", err)
+		return
+	}
+	if err := updateCmd.MarkFlagRequired("status"); err != nil {
+		fmt.Printf("Error marking status flag as required: %v\n", err)
+		return
+	}
+
 	issueCmd.AddCommand(updateCmd)
 }

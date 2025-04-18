@@ -87,9 +87,17 @@ func GenerateReport(data interface{}, format OutputFormat) error {
 	return nil
 }
 
+func capitalizeFirst(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
+}
+
 // getFlattenedHeaders returns a slice of headers for all fields including nested structs
 func getFlattenedHeaders(t reflect.Type, prefix string) []string {
 	var headers []string
+
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		jsonTag := field.Tag.Get("json")
@@ -109,15 +117,18 @@ func getFlattenedHeaders(t reflect.Type, prefix string) []string {
 		}
 
 		// Skip "fields" prefix for better readability
-		if fieldName == "fields" {
+		if strings.EqualFold(fieldName, "fields") {
 			nestedHeaders := getFlattenedHeaders(field.Type, "")
 			headers = append(headers, nestedHeaders...)
 			continue
 		}
 
+		// Always capitalize the field name
+		fieldName = capitalizeFirst(fieldName)
+
 		if field.Type.Kind() == reflect.Struct {
 			// Recursively get headers for nested struct
-			nestedPrefix := prefix
+			var nestedPrefix string
 			if prefix != "" {
 				nestedPrefix = prefix + fieldName + "."
 			} else {
@@ -126,17 +137,15 @@ func getFlattenedHeaders(t reflect.Type, prefix string) []string {
 			nestedHeaders := getFlattenedHeaders(field.Type, nestedPrefix)
 			headers = append(headers, nestedHeaders...)
 		} else {
-			header := fieldName
+			// Add the field name with prefix
 			if prefix != "" {
-				header = prefix + header
+				headers = append(headers, prefix+fieldName)
+			} else {
+				headers = append(headers, fieldName)
 			}
-			// Capitalize first letter for better readability
-			if len(header) > 0 {
-				header = strings.ToUpper(header[:1]) + header[1:]
-			}
-			headers = append(headers, header)
 		}
 	}
+
 	return headers
 }
 

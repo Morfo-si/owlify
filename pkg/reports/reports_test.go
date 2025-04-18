@@ -64,7 +64,7 @@ func TestGetFlattenedHeaders(t *testing.T) {
 					Age  string `json:"age"`
 				} `json:"kid"`
 			}{}),
-			Expected: []string{"Name", "Age", "Kid.name", "Kid.age"},
+			Expected: []string{"Name", "Age", "Kid.Name", "Kid.Age"},
 		},
 		{
 			Input: reflect.TypeOf(struct {
@@ -83,13 +83,13 @@ func TestGetFlattenedHeaders(t *testing.T) {
 				Age  int    `json:"age"`
 				Pet  struct {
 					Breed string `json:"breed"`
-					Shot struct {
+					Shot  struct {
 						Brand string `json:"brand"`
 						Date  string `json:"date"`
 					} `json:"shot"`
 				} `json:"pet"`
 			}{}),
-			Expected: []string{"Name", "Age", "Pet.breed", "Pet.shot.brand", "Pet.shot.date"},
+			Expected: []string{"Name", "Age", "Pet.Breed", "Pet.Shot.Brand", "Pet.Shot.Date"},
 		},
 	}
 

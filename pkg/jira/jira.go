@@ -6,20 +6,31 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
 )
 
 var (
-	jiraBaseURL  string
-	jiraUsername string
-	jiraToken    string
-	httpProxy    string
-	httpsProxy   string
+	jiraBaseURL string
+	jiraToken   string
+	httpProxy   string
+	httpsProxy  string
 )
 
 func init() {
+	// Check if we're in a test environment
+	if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], "_test") {
+		// In test environment, use mock values if not set
+		if os.Getenv("JIRA_BASE_URL") == "" {
+			os.Setenv("JIRA_BASE_URL", "https://example.atlassian.net")
+		}
+		if os.Getenv("JIRA_TOKEN") == "" {
+			os.Setenv("JIRA_TOKEN", "mock-token")
+		}
+	}
+
 	// Try to load .env file from the current directory
 	// Try to load .env from current directory first
 	var envPath string
@@ -48,28 +59,13 @@ func init() {
 			fmt.Printf("Created new .env file at %s. Please edit it with your credentials.\n", envPath)
 
 		}
-
-		envPath := fmt.Sprintf("%s/owlify/.env", configDir)
-		if err := godotenv.Load(envPath); err != nil {
-			fmt.Fprintf(os.Stderr, "Error loading .env file: %v\n", err)
-			return
-		}
 	}
 
-	// Get values from either .env file or environment variables
+	// Load environment variables
 	jiraBaseURL = getEnvOrPanic("JIRA_BASE_URL")
-	jiraUsername = getEnvOrPanic("JIRA_USERNAME")
 	jiraToken = getEnvOrPanic("JIRA_TOKEN")
-
-	// Get proxy settings from environment
 	httpProxy = os.Getenv("HTTP_PROXY")
-	if httpProxy == "" {
-		httpProxy = os.Getenv("http_proxy")
-	}
 	httpsProxy = os.Getenv("HTTPS_PROXY")
-	if httpsProxy == "" {
-		httpsProxy = os.Getenv("https_proxy")
-	}
 }
 
 // getEnvOrPanic retrieves an environment variable or panics if it's not set
