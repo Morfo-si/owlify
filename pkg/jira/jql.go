@@ -5,7 +5,7 @@ import (
 	"net/url"
 )
 
-func FetchIssuesFromJQL(jql string) ([]Issue, error) {
+func FetchIssuesFromJQL(jql string, makeGetRequest JiraRequestFunc) ([]Issue, error) {
 	url := fmt.Sprintf("%s/rest/api/2/search?jql=%s", jiraBaseURL, url.QueryEscape(jql))
 
 	var jiraResponse JiraResponse

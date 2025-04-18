@@ -9,7 +9,7 @@ func GetIssue(issueKey string) ([]Issue, error) {
 	url := fmt.Sprintf("%s/rest/api/2/issue/%s", jiraBaseURL, issueKey)
 
 	var issueData Issue
-	if err := makeGetRequest(url, &issueData); err != nil {
+	if err := JIRAGetRequest(url, &issueData); err != nil {
 		return nil, fmt.Errorf("error fetching issue %s: %v", issueKey, err)
 	}
 
@@ -60,7 +60,7 @@ func GetAvailableTransitions(issue Issue) ([]Transition, error) {
 	url := fmt.Sprintf("%s/rest/api/2/issue/%s/transitions", jiraBaseURL, issue.ID)
 
 	var response TransitionResponse
-	if err := makeGetRequest(url, &response); err != nil {
+	if err := JIRAGetRequest(url, &response); err != nil {
 		return nil, fmt.Errorf("error fetching transitions for issue %s: %v", issue.ID, err)
 	}
 
