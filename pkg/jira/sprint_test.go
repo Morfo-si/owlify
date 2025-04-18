@@ -38,6 +38,10 @@ func mockOpenSprintIssuesRequest(url string, response interface{}) error {
 		return errors.New("failed to fetch sprints")
 	}
 
+	// Create time.Time values for due dates
+	dueDate1, _ := time.Parse("2006-01-02", "2025-03-15")
+	dueDate2, _ := time.Parse("2006-01-02", "2025-03-20")
+
 	mockResponse := JiraResponse{
 		[]Issue{
 			{
@@ -48,7 +52,7 @@ func mockOpenSprintIssuesRequest(url string, response interface{}) error {
 						Name: "John Doe",
 					},
 					StoryPoint: 3.0,
-					DueDate:    "2025-03-15",
+					DueDate:    &dueDate1,
 					Priority: Priority{
 						Name: "High",
 					},
@@ -65,7 +69,7 @@ func mockOpenSprintIssuesRequest(url string, response interface{}) error {
 						Name: "Jane Smith",
 					},
 					StoryPoint: 5.0,
-					DueDate:    "2025-03-20",
+					DueDate:    &dueDate2,
 					Priority: Priority{
 						Name: "Medium",
 					},

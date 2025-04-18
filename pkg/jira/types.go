@@ -5,13 +5,73 @@ import (
 	"time"
 )
 
+// Fields represents the content fields of a JIRA issue
 type Fields struct {
-	Summary    string   `json:"summary"`
-	Assignee   Assignee `json:"assignee"`
-	StoryPoint float64  `json:"customfield_12310243"`
-	DueDate    string   `json:"duedate"`
-	Priority   Priority `json:"priority"`
-	Status     Status   `json:"status"`
+	Summary    string     `json:"summary"`
+	Assignee   Assignee   `json:"assignee"`
+	StoryPoint float64    `json:"customfield_12310243"`
+	DueDate    *time.Time `json:"duedate,omitempty"`
+	Priority   Priority   `json:"priority"`
+	Status     Status     `json:"status"`
+}
+
+// UnmarshalJSON implements custom JSON unmarshaling for Fields
+func (f *Fields) UnmarshalJSON(data []byte) error {
+	type FieldsAlias Fields
+	type FieldsTemp struct {
+		*FieldsAlias
+		DueDate string `json:"duedate"`
+	}
+
+	temp := &FieldsTemp{FieldsAlias: (*FieldsAlias)(f)}
+	if err := json.Unmarshal(data, temp); err != nil {
+		return err
+	}
+
+	// Parse DueDate if it's not empty
+	if temp.DueDate != "" {
+		// Try different date formats
+		formats := []string{
+			"2006-01-02",
+			"2006-01-02T15:04:05.000-0700",
+			"2006-01-02T15:04:05.000Z",
+		}
+
+		for _, format := range formats {
+			if t, err := time.Parse(format, temp.DueDate); err == nil {
+				f.DueDate = &t
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// IsOverdue returns true if the issue is past its due date
+func (f Fields) IsOverdue() bool {
+	if f.DueDate == nil {
+		return false
+	}
+	return time.Now().After(*f.DueDate)
+}
+
+// DaysUntilDue returns the number of days until the issue is due
+// Returns negative values for overdue issues
+func (f Fields) DaysUntilDue() int {
+	if f.DueDate == nil {
+		return 0
+	}
+
+	now := time.Now()
+	due := *f.DueDate
+
+	// Normalize to midnight for consistent day calculations
+	now = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	due = time.Date(due.Year(), due.Month(), due.Day(), 0, 0, 0, 0, due.Location())
+
+	days := int(due.Sub(now).Hours() / 24)
+	return days
 }
 
 type Assignee struct {
