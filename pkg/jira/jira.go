@@ -100,7 +100,9 @@ func createHTTPClient() *http.Client {
 	}
 }
 
-func makeGetRequest(reqUrl string, target interface{}) error {
+type JiraRequestFunc func(string, interface{}) error
+
+func JIRAGetRequest(reqUrl string, target interface{}) error {
 	// Replace client creation with new function
 	client := createHTTPClient()
 
