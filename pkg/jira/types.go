@@ -1,23 +1,31 @@
 package jira
 
+type Fields struct {
+	Summary    string  `json:"summary"`
+	Assignee   Assignee `json:"assignee"`
+	StoryPoint float64 `json:"customfield_12310243"`
+	DueDate    string  `json:"duedate"`
+	Priority   Priority `json:"priority"`
+	Status     Status   `json:"status"`
+}
+
+type Assignee struct {
+	Name string `json:"name"`
+}
+
+type Priority struct {
+	Name string `json:"name"`
+}
+
+type Status struct {
+	Name string `json:"name"`
+}
+
 // Issue represents a JIRA issue
 type Issue struct {
 	ID     string `json:"id"`
 	Key    string `json:"key"`
-	Fields struct {
-		Summary  string `json:"summary"`
-		Assignee struct {
-			Name string `json:"name"`
-		} `json:"assignee"`
-		StoryPoint float64 `json:"customfield_12310243"`
-		DueDate  string `json:"duedate"`
-		Priority struct {
-			Name string `json:"name"`
-		} `json:"priority"`
-		Status struct {
-			Name string `json:"name"`
-		} `json:"status"`
-	} `json:"fields"`
+	Fields Fields `json:"fields"`
 }
 
 type JiraResponse struct {
