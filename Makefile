@@ -18,7 +18,7 @@ all: test build
 .PHONY: build
 build:
 	@echo "Building..."
-	$(GOBUILD) -o $(BINARY_NAME) -v ./...
+	$(GOBUILD) -o $(BINARY_NAME) -v .
 
 # Run tests
 .PHONY: test
