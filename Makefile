@@ -10,15 +10,38 @@ COVERAGE_DIR=coverage
 COVERAGE_FILE=$(COVERAGE_DIR)/coverage.out
 COVERAGE_HTML=$(COVERAGE_DIR)/coverage.html
 
+TAG = ${NEW_RELEASE_TAG}
+TARGET = novelist
+
+check-tag:
+ifndef NEW_RELEASE_TAG
+	$(error Please set the NEW_RELEASE_TAG env variable)
+	exit 1
+endif
+
+check-token:
+ifndef GITHUB_TOKEN
+	$(error Please set the GITHUB_TOKEN env variable)
+	exit 1
+endif
+
 # Default target
 .PHONY: all
 all: test build
 
 # Build the application
 .PHONY: build
-build:
+build: check-tag
 	@echo "Building..."
-	$(GOBUILD) -o $(BINARY_NAME) -v .
+	goreleaser build --clean
+
+publish: tidy tag check-token
+	go install github.com/goreleaser/goreleaser@latest
+	goreleaser release --clean
+
+tag: check-tag
+	git tag -a "$(TAG)" -m "$(TAG)"
+	git push origin $(TAG)
 
 # Run tests
 .PHONY: test
