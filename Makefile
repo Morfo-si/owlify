@@ -35,6 +35,7 @@ build: check-tag
 	@echo "Building..."
 	goreleaser build --clean
 
+.PHONY: publish
 publish: tidy tag check-token
 	go install github.com/goreleaser/goreleaser@latest
 	goreleaser release --clean
@@ -42,6 +43,9 @@ publish: tidy tag check-token
 tag: check-tag
 	git tag -a "$(TAG)" -m "$(TAG)"
 	git push origin $(TAG)
+
+tidy:
+	go mod tidy
 
 # Run tests
 .PHONY: test
