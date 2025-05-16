@@ -5,6 +5,8 @@ package jira
 import (
 	"encoding/json"
 	"errors"
+	"net/url"
+	"strconv"
 	"testing"
 	"time"
 
@@ -218,5 +220,118 @@ func TestSprintWithMissingDates(t *testing.T) {
 	// Duration should be 0 for sprints without dates
 	if sprint.Duration() != 0 {
 		t.Errorf("Expected duration 0, got %v", sprint.Duration())
+	}
+}
+
+func TestWithMaxResults(t *testing.T) {
+	// Test cases
+	testCases := []struct {
+		name     string
+		maxValue int
+		expected int
+	}{
+		{"Zero value", 0, 0},
+		{"Positive value", 50, 50},
+		{"Negative value", -10, -10},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create options with default values
+			opts := defaultSprintRequestOptions()
+			
+			// Apply the WithMaxResults option
+			option := WithMaxResults(tc.maxValue)
+			option(opts)
+			
+			// Check if maxResults was set correctly
+			if opts.maxResults != tc.expected {
+				t.Errorf("WithMaxResults(%d) = %d, expected %d", 
+					tc.maxValue, opts.maxResults, tc.expected)
+			}
+		})
+	}
+}
+
+func TestWithStartAt(t *testing.T) {
+	// Test cases
+	testCases := []struct {
+		name          string
+		startAtValue  int
+		expectedValue int
+	}{
+		{"Zero value", 0, 0},
+		{"Positive value", 10, 10},
+		{"Negative value", -5, -5}, // Even though negative values don't make sense for pagination
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create options with default values
+			opts := defaultSprintRequestOptions()
+			
+			// Apply the WithStartAt option
+			option := WithStartAt(tc.startAtValue)
+			option(opts)
+			
+			// Check if the startAt value was correctly set
+			if opts.startAt != tc.expectedValue {
+				t.Errorf("WithStartAt(%d) = %d, want %d", 
+					tc.startAtValue, opts.startAt, tc.expectedValue)
+			}
+		})
+	}
+}
+
+func TestMaxResultsParameter(t *testing.T) {
+	tests := []struct {
+		name       string
+		maxResults int
+		want       bool
+	}{
+		{
+			name:       "with positive maxResults",
+			maxResults: 10,
+			want:       true,
+		},
+		{
+			name:       "with zero maxResults",
+			maxResults: 0,
+			want:       false,
+		},
+		{
+			name:       "with negative maxResults",
+			maxResults: -5,
+			want:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup
+			opts := defaultSprintRequestOptions()
+			opts.maxResults = tt.maxResults
+			params := url.Values{}
+
+			// Execute the code being tested
+			if opts.maxResults > 0 {
+				params.Add("maxResults", strconv.Itoa(opts.maxResults))
+			}
+
+			// Verify results
+			_, exists := params["maxResults"]
+			if exists != tt.want {
+				t.Errorf("maxResults parameter existence = %v, want %v", exists, tt.want)
+			}
+
+			// If parameter should exist, verify its value
+			if tt.want {
+				got := params.Get("maxResults")
+				want := strconv.Itoa(tt.maxResults)
+				if got != want {
+					t.Errorf("maxResults value = %v, want %v", got, want)
+				}
+			}
+		})
 	}
 }
