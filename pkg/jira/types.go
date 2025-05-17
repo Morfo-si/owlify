@@ -5,14 +5,22 @@ import (
 	"time"
 )
 
+// Epic represents a JIRA epic
+type Epic struct {
+	Key     string `json:"key"`
+	Summary string `json:"summary"`
+}
+
 // Fields represents the content fields of a JIRA issue
 type Fields struct {
 	Summary    string     `json:"summary"`
 	Assignee   Assignee   `json:"assignee"`
+	IssueType  IssueType  `json:"issuetype"`
 	StoryPoint float64    `json:"customfield_12310243"`
-	DueDate    *time.Time `json:"duedate,omitempty"`
 	Priority   Priority   `json:"priority"`
 	Status     Status     `json:"status"`
+	Epic       *Epic      `json:"epic,omitempty"`
+	DueDate    *time.Time `json:"duedate,omitempty"`
 }
 
 // UnmarshalJSON implements custom JSON unmarshaling for Fields
@@ -86,9 +94,12 @@ type Status struct {
 	Name string `json:"name"`
 }
 
+type IssueType struct {
+	Name string `json:"name"`
+}
+
 // Issue represents a JIRA issue
 type Issue struct {
-	ID     string `json:"id"`
 	Key    string `json:"key"`
 	Fields Fields `json:"fields"`
 }

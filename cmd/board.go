@@ -22,7 +22,7 @@ var (
 			if project == "" {
 				return fmt.Errorf("project is required")
 			}
-			boards, err := jira.FetchBoards(project)
+			boards, err := jira.FetchBoards(project, jira.JIRAGetRequest)
 			if err != nil {
 				return fmt.Errorf("error fetching boards: %v", err)
 			}

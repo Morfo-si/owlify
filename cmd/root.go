@@ -21,7 +21,7 @@ var (
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&component, "component", "c", "", "JIRA component (optional)")
-	rootCmd.PersistentFlags().StringVarP(&project, "project", "p", "", "JIRA project key (required)")
+	rootCmd.PersistentFlags().StringVarP(&project, "project", "p", "", "JIRA project key (optional)")
 	rootCmd.PersistentFlags().IntVarP(&sprint, "sprint", "s", 0, "Sprint number (optional)")
 	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "table", "Output format: table or json or csv")
 
@@ -37,6 +37,7 @@ func init() {
 	if err := viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project")); err != nil {
 		fmt.Printf("Error binding project flag: %v\n", err)
 	}
+	// NOTE: The 'project' flag is not required for the 'sprint' command.
 	if err := viper.BindPFlag("sprint", rootCmd.PersistentFlags().Lookup("sprint")); err != nil {
 		fmt.Printf("Error binding sprint flag: %v\n", err)
 	}

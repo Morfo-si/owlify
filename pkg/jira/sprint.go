@@ -12,6 +12,73 @@ const (
 	JIRA_URL_JQL   = "rest/api/2/search?jql"
 )
 
+// FetchSprintByID retrieves a Jira sprint with the specified ID.
+// It makes a GET request to the Jira API and returns the sprint.
+//
+// Parameters:
+//   - id: The ID of the sprint to fetch
+//   - makeGetRequest: Function to make the Jira API request
+//
+// Returns:
+//   - Sprint: Sprint object if successful
+//   - error: Error if the request fails
+func FetchSprintByID(id int, makeGetRequest JiraRequestFunc) (Sprint, error) {
+	var sprintResp Sprint
+	// JQL to find boards for the project and component
+	sprintSearchURL := fmt.Sprintf("%s/rest/agile/1.0/sprint/%d", jiraBaseURL, id)
+
+	if err := makeGetRequest(sprintSearchURL, &sprintResp); err != nil {
+		return Sprint{}, err
+	}
+	return sprintResp, nil
+}
+
+// FetchSprintIssues retrieves issues from a given sprint.
+// It uses the provided makeGetRequest function to make the API call to JIRA.
+//
+// Parameters:
+//   - sprintID: The ID of the sprint to fetch issues from
+//   - makeGetRequest: Function to make the HTTP GET request to JIRA
+//
+// Returns:
+//   - []Issue: A slice of Issue objects representing the issues in the sprint
+//   - error: An error if the request fails or the response cannot be parsed
+func FetchSprintIssues(sprintID int, makeGetRequest JiraRequestFunc) ([]Issue, error) {
+	var jiraResponse JiraResponse
+
+	sprintSearchURL := fmt.Sprintf("%s/rest/agile/1.0/sprint/%d/issue", jiraBaseURL, sprintID)
+
+	if err := makeGetRequest(sprintSearchURL, &jiraResponse); err != nil {
+		return nil, err
+	}
+
+	return jiraResponse.Issues, nil
+}
+
+// FetchSprintIssuesWithEpic retrieves issues from a given sprint with epic information included.
+// It uses the provided makeGetRequest function to make the API call to JIRA.
+//
+// Parameters:
+//   - sprintID: The ID of the sprint to fetch issues from
+//   - makeGetRequest: Function to make the HTTP GET request to JIRA
+//
+// Returns:
+//   - []Issue: A slice of Issue objects representing the issues in the sprint with epic information
+//   - error: An error if the request fails or the response cannot be parsed
+func FetchSprintIssuesWithEpic(sprintID int, makeGetRequest JiraRequestFunc) ([]Issue, error) {
+	var jiraResponse JiraResponse
+
+	// Use the fields parameter to expand epic information
+	// Using rest/agile/1.0 API which includes epic data in the response
+	sprintSearchURL := fmt.Sprintf("%s/rest/agile/1.0/sprint/%d/issue?fields=summary,assignee,status,priority,customfield_12310243,duedate,epic,issuetype", jiraBaseURL, sprintID)
+
+	if err := makeGetRequest(sprintSearchURL, &jiraResponse); err != nil {
+		return nil, err
+	}
+
+	return jiraResponse.Issues, nil
+}
+
 // FetchCurrentSprintIssues retrieves issues from the current sprint for a given project and component.
 // It uses the provided makeGetRequest function to make the API call to JIRA.
 // Parameters:

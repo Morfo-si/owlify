@@ -335,3 +335,66 @@ func TestMaxResultsParameter(t *testing.T) {
 		})
 	}
 }
+
+func TestFetchSprintByID(t *testing.T) {
+	tests := []struct {
+		name           string
+		sprintID       int
+		mockResponse   Sprint
+		mockError      error
+		expectedSprint Sprint
+		expectedError  bool
+	}{
+		{
+			name:     "successful fetch",
+			sprintID: 123,
+			mockResponse: Sprint{
+				ID:    123,
+				Name:  "Test Sprint",
+				State: "active",
+			},
+			mockError:      nil,
+			expectedSprint: Sprint{ID: 123, Name: "Test Sprint", State: "active"},
+			expectedError:  false,
+		},
+		{
+			name:           "api error",
+			sprintID:       456,
+			mockResponse:   Sprint{},
+			mockError:      errors.New("API error"),
+			expectedSprint: Sprint{},
+			expectedError:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create mock request function
+			mockMakeRequest := func(url string, target interface{}) error {
+				if tt.mockError != nil {
+					return tt.mockError
+				}
+				
+				// Marshal and unmarshal to simulate JSON response handling
+				data, _ := json.Marshal(tt.mockResponse)
+				return json.Unmarshal(data, target)
+			}
+
+			// Call the function being tested
+			sprint, err := FetchSprintByID(tt.sprintID, mockMakeRequest)
+
+			// Check error
+			if (err != nil) != tt.expectedError {
+				t.Errorf("FetchSprintByID() error = %v, expectedError = %v", err, tt.expectedError)
+				return
+			}
+
+			// Check sprint data
+			if sprint.ID != tt.expectedSprint.ID || 
+			   sprint.Name != tt.expectedSprint.Name || 
+			   sprint.State != tt.expectedSprint.State {
+				t.Errorf("FetchSprintByID() = %v, expected %v", sprint, tt.expectedSprint)
+			}
+		})
+	}
+}

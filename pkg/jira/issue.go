@@ -48,7 +48,7 @@ func UpdateIssueStatus(issueKey string, newStatus string) error {
 		}{ID: transitionID},
 	}
 
-	url := fmt.Sprintf("%s/rest/api/2/issue/%s/transitions", jiraBaseURL, issue[0].ID)
+	url := fmt.Sprintf("%s/rest/api/2/issue/%s/transitions", jiraBaseURL, issue[0].Key)
 	if err := makePostRequest(url, payload, nil); err != nil {
 		return fmt.Errorf("error transitioning issue: %v", err)
 	}
@@ -57,11 +57,11 @@ func UpdateIssueStatus(issueKey string, newStatus string) error {
 }
 
 func GetAvailableTransitions(issue Issue) ([]Transition, error) {
-	url := fmt.Sprintf("%s/rest/api/2/issue/%s/transitions", jiraBaseURL, issue.ID)
+	url := fmt.Sprintf("%s/rest/api/2/issue/%s/transitions", jiraBaseURL, issue.Key)
 
 	var response TransitionResponse
 	if err := JIRAGetRequest(url, &response); err != nil {
-		return nil, fmt.Errorf("error fetching transitions for issue %s: %v", issue.ID, err)
+		return nil, fmt.Errorf("error fetching transitions for issue %s: %v", issue.Key, err)
 	}
 
 	return response.Transitions, nil
