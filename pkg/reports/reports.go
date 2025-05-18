@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/olekukonko/tablewriter"
 )
@@ -222,7 +223,15 @@ func getFlattenedValues(v reflect.Value) []string {
 			if field.Kind() == reflect.Ptr && !field.IsNil() {
 				val = field.Elem().Interface()
 			}
-			values = append(values, fmt.Sprintf("%v", val))
+			
+			// Special formatting for time.Time values
+			switch v := val.(type) {
+			case time.Time:
+				// Format time as YYYY-MM-DD
+				values = append(values, v.Format("2006-01-02"))
+			default:
+				values = append(values, fmt.Sprintf("%v", val))
+			}
 		}
 	}
 	return values

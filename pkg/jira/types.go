@@ -146,19 +146,42 @@ func (s *Sprint) UnmarshalJSON(data []byte) error {
 	}
 
 	// Parse dates if they're not empty
+	// Define formats to try
+	formats := []string{
+		"2006-01-02T15:04:05.999-0700",
+		"2006-01-02T15:04:05.000Z",
+		"2006-01-02T15:04:05.000-0700",
+		"2006-01-02T15:04:05Z",
+		"2006-01-02",
+	}
+
+	// Parse StartDate
 	if temp.StartDate != "" {
-		if t, err := time.Parse("2006-01-02T15:04:05.999-0700", temp.StartDate); err == nil {
-			s.StartDate = &t
+		for _, format := range formats {
+			if t, err := time.Parse(format, temp.StartDate); err == nil {
+				s.StartDate = &t
+				break
+			}
 		}
 	}
+	
+	// Parse EndDate
 	if temp.EndDate != "" {
-		if t, err := time.Parse("2006-01-02T15:04:05.999-0700", temp.EndDate); err == nil {
-			s.EndDate = &t
+		for _, format := range formats {
+			if t, err := time.Parse(format, temp.EndDate); err == nil {
+				s.EndDate = &t
+				break
+			}
 		}
 	}
+	
+	// Parse ActivatedDate
 	if temp.ActivatedDate != "" {
-		if t, err := time.Parse("2006-01-02T15:04:05.999-0700", temp.ActivatedDate); err == nil {
-			s.ActivatedDate = &t
+		for _, format := range formats {
+			if t, err := time.Parse(format, temp.ActivatedDate); err == nil {
+				s.ActivatedDate = &t
+				break
+			}
 		}
 	}
 
