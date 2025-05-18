@@ -35,63 +35,6 @@ func mockOpenSprintsRequest(url string, response interface{}) error {
 	return errors.New("invalid response type")
 }
 
-func mockOpenSprintIssuesRequest(url string, response interface{}) error {
-	if url == "error" {
-		return errors.New("failed to fetch sprints")
-	}
-
-	// Create time.Time values for due dates
-	dueDate1, _ := time.Parse("2006-01-02", "2025-03-15")
-	dueDate2, _ := time.Parse("2006-01-02", "2025-03-20")
-
-	mockResponse := JiraResponse{
-		[]Issue{
-			{
-				Key: "issue1",
-				Fields: Fields{
-					Summary: "Issue 1",
-					Assignee: Assignee{
-						Name: "John Doe",
-					},
-					StoryPoint: 3.0,
-					DueDate:    &dueDate1,
-					Priority: Priority{
-						Name: "High",
-					},
-					Status: Status{
-						Name: "In Progress",
-					},
-				},
-			},
-			{
-				Key: "issue2",
-				Fields: Fields{
-					Summary: "Issue 2",
-					Assignee: Assignee{
-						Name: "Jane Smith",
-					},
-					StoryPoint: 5.0,
-					DueDate:    &dueDate2,
-					Priority: Priority{
-						Name: "Medium",
-					},
-					Status: Status{
-						Name: "To Do",
-					},
-				},
-			},
-		},
-	}
-
-	// Type assertion to correctly populate response
-	if r, ok := response.(*JiraResponse); ok {
-		*r = mockResponse
-		return nil
-	}
-
-	return errors.New("invalid response type")
-}
-
 func TestFetchOpenSprints_Success(t *testing.T) {
 	boardID := 123
 
@@ -130,18 +73,6 @@ func TestFetchOpenSprints_EmptyResponse(t *testing.T) {
 	sprints, err := FetchOpenSprints(boardID, mockEmptyFunc)
 	assert.NoError(t, err)
 	assert.Empty(t, sprints)
-}
-
-func TestFetchCurrentSprintIssues_Success(t *testing.T) {
-	project := "project1"
-	component := "component1"
-	sprintNumber := 1
-
-	issues, err := FetchCurrentSprintIssues(project, component, sprintNumber, mockOpenSprintIssuesRequest)
-	assert.NoError(t, err)
-	assert.Len(t, issues, 2)
-	assert.Equal(t, "issue1", issues[0].Key)
-	assert.Equal(t, "issue2", issues[1].Key)
 }
 
 func TestSprintUnmarshalJSON(t *testing.T) {
@@ -239,14 +170,14 @@ func TestWithMaxResults(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create options with default values
 			opts := defaultSprintRequestOptions()
-			
+
 			// Apply the WithMaxResults option
 			option := WithMaxResults(tc.maxValue)
 			option(opts)
-			
+
 			// Check if maxResults was set correctly
 			if opts.maxResults != tc.expected {
-				t.Errorf("WithMaxResults(%d) = %d, expected %d", 
+				t.Errorf("WithMaxResults(%d) = %d, expected %d",
 					tc.maxValue, opts.maxResults, tc.expected)
 			}
 		})
@@ -269,14 +200,14 @@ func TestWithStartAt(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create options with default values
 			opts := defaultSprintRequestOptions()
-			
+
 			// Apply the WithStartAt option
 			option := WithStartAt(tc.startAtValue)
 			option(opts)
-			
+
 			// Check if the startAt value was correctly set
 			if opts.startAt != tc.expectedValue {
-				t.Errorf("WithStartAt(%d) = %d, want %d", 
+				t.Errorf("WithStartAt(%d) = %d, want %d",
 					tc.startAtValue, opts.startAt, tc.expectedValue)
 			}
 		})
@@ -374,7 +305,7 @@ func TestFetchSprintByID(t *testing.T) {
 				if tt.mockError != nil {
 					return tt.mockError
 				}
-				
+
 				// Marshal and unmarshal to simulate JSON response handling
 				data, _ := json.Marshal(tt.mockResponse)
 				return json.Unmarshal(data, target)
@@ -390,9 +321,9 @@ func TestFetchSprintByID(t *testing.T) {
 			}
 
 			// Check sprint data
-			if sprint.ID != tt.expectedSprint.ID || 
-			   sprint.Name != tt.expectedSprint.Name || 
-			   sprint.State != tt.expectedSprint.State {
+			if sprint.ID != tt.expectedSprint.ID ||
+				sprint.Name != tt.expectedSprint.Name ||
+				sprint.State != tt.expectedSprint.State {
 				t.Errorf("FetchSprintByID() = %v, expected %v", sprint, tt.expectedSprint)
 			}
 		})

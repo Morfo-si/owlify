@@ -79,45 +79,6 @@ func FetchSprintIssuesWithEpic(sprintID int, makeGetRequest JiraRequestFunc) ([]
 	return jiraResponse.Issues, nil
 }
 
-// FetchCurrentSprintIssues retrieves issues from the current sprint for a given project and component.
-// It uses the provided makeGetRequest function to make the API call to JIRA.
-// Parameters:
-//   - project: The project key or ID to filter issues by
-//   - component: The component name to filter issues by
-//   - sprintNumber: The sprint number to filter issues by (0 for all open sprints)
-//   - makeGetRequest: Function to make the HTTP GET request to JIRA
-//
-// Returns:
-//   - []Issue: A slice of Issue objects representing the issues in the current sprint
-//   - error: An error if the request fails or the response cannot be parsed
-func FetchCurrentSprintIssues(project, component string, sprintNumber int, makeGetRequest JiraRequestFunc) ([]Issue, error) {
-	var jql string
-
-	// If no sprint number is provided, fetch issues from all open sprints
-	if sprintNumber == 0 {
-		jql = "sprint in openSprints()"
-	} else {
-		jql = fmt.Sprintf("sprint = %d", sprintNumber)
-	}
-
-	if component != "" {
-		jql += fmt.Sprintf(" AND component = '%s'", component)
-	}
-
-	if project != "" {
-		jql += fmt.Sprintf(" AND project = '%s'", project)
-	}
-
-	url := fmt.Sprintf("%s/%s=%s", jiraBaseURL, JIRA_URL_JQL, url.QueryEscape(jql))
-
-	var jiraResponse JiraResponse
-	if err := makeGetRequest(url, &jiraResponse); err != nil {
-		return nil, err
-	}
-
-	return jiraResponse.Issues, nil
-}
-
 // FetchOpenSprints retrieves all active sprints for a given board ID.
 // It uses the provided makeGetRequest function to make the API call to JIRA.
 //
