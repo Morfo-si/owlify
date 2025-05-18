@@ -10,18 +10,18 @@ import (
 )
 
 var (
-	boardId int
+	boardId  int
 	sprintId int
 
 	sprintCmd = &cobra.Command{
 		Use:   "sprint",
 		Short: "Fetch JIRA issues from sprints",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if sprint == 0 {
-				return fmt.Errorf("sprint is required")
+			if sprintId == 0 {
+				return fmt.Errorf("sprint id is required")
 			}
 
-			issues, err := jira.FetchSprintIssues(sprint, jira.JIRAGetRequest)
+			issues, err := jira.FetchSprintIssues(sprintId, jira.JIRAGetRequest)
 			if err != nil {
 				return fmt.Errorf("error fetching JIRA issues: %v", err)
 			}
@@ -41,7 +41,7 @@ var (
 		Short: "List all open sprints",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if boardId == 0 {
-				return fmt.Errorf("boardId is required")
+				return fmt.Errorf("board id is required")
 			}
 
 			sprints, err := jira.FetchOpenSprints(boardId, jira.JIRAGetRequest)
@@ -61,7 +61,7 @@ var (
 		Short: "List issues from a sprint with epic information",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if sprintId == 0 {
-				return fmt.Errorf("sprintId is required")
+				return fmt.Errorf("sprint id is required")
 			}
 
 			issues, err := jira.FetchSprintIssuesWithEpic(sprintId, jira.JIRAGetRequest)
@@ -82,19 +82,13 @@ var (
 )
 
 func init() {
+
+	// Add required flags
+	sprintCmd.Flags().IntVarP(&sprintId, "sprint", "s", 0, "JIRA sprint ID (required)")
+	sprintListCmd.Flags().IntVarP(&boardId, "board", "b", 0, "JIRA board ID (required)")
+	sprintIssuesCmd.Flags().IntVarP(&sprintId, "sprint", "s", 0, "JIRA sprint ID (required)")
+
 	// Add subcommands to sprint command
 	sprintCmd.AddCommand(sprintListCmd)
 	sprintCmd.AddCommand(sprintIssuesCmd)
-
-	// Add required flags
-	sprintListCmd.Flags().IntVarP(&boardId, "boardId", "b", 0, "JIRA board ID (required)")
-	sprintIssuesCmd.Flags().IntVarP(&sprintId, "sprintId", "i", 0, "JIRA sprint ID (required)")
-
-	// Mark flags as required
-	if err := sprintListCmd.MarkFlagRequired("boardId"); err != nil {
-		fmt.Printf("Error marking boardId flag as required: %v\n", err)
-	}
-	if err := sprintIssuesCmd.MarkFlagRequired("sprintId"); err != nil {
-		fmt.Printf("Error marking sprintId flag as required: %v\n", err)
-	}
 }

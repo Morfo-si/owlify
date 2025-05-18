@@ -34,7 +34,7 @@ var (
 		},
 	}
 
-	updateCmd = &cobra.Command{
+	issueUpdateStatusCmd = &cobra.Command{
 		Use:   "update",
 		Short: "Update a JIRA issue fields",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -58,22 +58,8 @@ var (
 )
 
 func init() {
-	issueCmd.Flags().StringVarP(&issueKey, "key", "k", "", "JIRA issue key (required)")
-	if err := issueCmd.MarkFlagRequired("key"); err != nil {
-		fmt.Printf("Error marking key flag as required: %v\n", err)
-		return
-	}
+	issueCmd.PersistentFlags().StringVarP(&issueKey, "key", "k", "", "JIRA issue key (required)")
+	issueUpdateStatusCmd.PersistentFlags().StringVarP(&newStatus, "status", "s", "", "New status (required)")
 
-	updateCmd.Flags().StringVarP(&issueKey, "key", "k", "", "JIRA issue key (required)")
-	updateCmd.Flags().StringVarP(&newStatus, "status", "s", "", "New status (required)")
-	if err := updateCmd.MarkFlagRequired("key"); err != nil {
-		fmt.Printf("Error marking key flag as required: %v\n", err)
-		return
-	}
-	if err := updateCmd.MarkFlagRequired("status"); err != nil {
-		fmt.Printf("Error marking status flag as required: %v\n", err)
-		return
-	}
-
-	issueCmd.AddCommand(updateCmd)
+	issueCmd.AddCommand(issueUpdateStatusCmd)
 }

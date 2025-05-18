@@ -10,6 +10,8 @@ import (
 )
 
 var (
+	project string
+	
 	boardCmd = &cobra.Command{
 		Use:   "board",
 		Short: "Fetch JIRA boards from project",
@@ -35,5 +37,6 @@ var (
 )
 
 func init() {
+	boardListCmd.PersistentFlags().StringVarP(&project, "project", "p", "", "JIRA project key (required)")
 	boardCmd.AddCommand(boardListCmd)
 }
