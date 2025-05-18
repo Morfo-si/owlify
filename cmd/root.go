@@ -25,10 +25,6 @@ func init() {
 	rootCmd.AddCommand(jqlCmd)
 	rootCmd.AddCommand(issueCmd)
 
-	if err := viper.BindPFlag("component", rootCmd.PersistentFlags().Lookup("component")); err != nil {
-		fmt.Printf("Error binding component flag: %v\n", err)
-	}
-
 	if err := viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output")); err != nil {
 		fmt.Printf("Error binding output flag: %v\n", err)
 	}

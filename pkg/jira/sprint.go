@@ -1,10 +1,10 @@
-
 package jira
 
 import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -67,10 +67,21 @@ func FetchSprintIssues(sprintID int, makeGetRequest JiraRequestFunc) ([]Issue, e
 //   - error: An error if the request fails or the response cannot be parsed
 func FetchSprintIssuesWithEpic(sprintID int, makeGetRequest JiraRequestFunc) ([]Issue, error) {
 	var jiraResponse JiraResponse
+	fields := []string{
+		"summary",
+		"assignee",
+		"status",
+		"priority",
+		"customfield_12310243", // Story Points
+		"duedate",
+		"epic",
+		"issuetype",
+	}
+	fieldsStr := strings.Join(fields, ",")
 
 	// Use the fields parameter to expand epic information
 	// Using rest/agile/1.0 API which includes epic data in the response
-	sprintSearchURL := fmt.Sprintf("%s/rest/agile/1.0/sprint/%d/issue?fields=summary,assignee,status,priority,customfield_12310243,duedate,epic,issuetype", jiraBaseURL, sprintID)
+	sprintSearchURL := fmt.Sprintf("%s/rest/agile/1.0/sprint/%d/issue?fields=%s", jiraBaseURL, sprintID, fieldsStr)
 
 	if err := makeGetRequest(sprintSearchURL, &jiraResponse); err != nil {
 		return nil, err
@@ -99,7 +110,7 @@ func FetchOpenSprints(boardId int, makeGetRequest JiraRequestFunc, options ...Sp
 
 	// Build URL with query parameters
 	baseURL := fmt.Sprintf("%s/%s/%d/sprint", jiraBaseURL, JIRA_URL_BOARD, boardId)
-	
+
 	// Build query parameters
 	params := url.Values{}
 	params.Add("state", SprintStateActive)
@@ -109,7 +120,7 @@ func FetchOpenSprints(boardId int, makeGetRequest JiraRequestFunc, options ...Sp
 	if opts.startAt > 0 {
 		params.Add("startAt", strconv.Itoa(opts.startAt))
 	}
-	
+
 	sprintURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
 
 	var allSprints SprintResponse
