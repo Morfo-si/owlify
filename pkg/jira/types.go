@@ -6,9 +6,25 @@ import (
 )
 
 // Epic represents a JIRA epic
+type EpicResponse struct {
+	Key     string `json:"key"`
+	Summary string `json:"summary"`
+	Feature struct {
+		Summary string `json:"summary"`
+		Key     string `json:"customfield_12313140"`
+	} `json:"fields"`
+}
+
+// Epic represents a JIRA epic
 type Epic struct {
 	Key     string `json:"key"`
 	Summary string `json:"summary"`
+}
+
+// Feature represents a JIRA feature
+type Feature struct {
+	Summary string `json:"summary"`
+	Key     string `json:"customfield_12313140"`
 }
 
 // Fields represents the content fields of a JIRA issue
@@ -20,6 +36,7 @@ type Fields struct {
 	Priority   Priority   `json:"priority"`
 	Status     Status     `json:"status"`
 	Epic       *Epic      `json:"epic,omitempty"`
+	Feature    *Feature   `json:"feature,omitempty"`
 	DueDate    *time.Time `json:"duedate,omitempty"`
 }
 
@@ -164,7 +181,7 @@ func (s *Sprint) UnmarshalJSON(data []byte) error {
 			}
 		}
 	}
-	
+
 	// Parse EndDate
 	if temp.EndDate != "" {
 		for _, format := range formats {
@@ -174,7 +191,7 @@ func (s *Sprint) UnmarshalJSON(data []byte) error {
 			}
 		}
 	}
-	
+
 	// Parse ActivatedDate
 	if temp.ActivatedDate != "" {
 		for _, format := range formats {

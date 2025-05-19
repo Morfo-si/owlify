@@ -87,6 +87,37 @@ func FetchSprintIssuesWithEpic(sprintID int, makeGetRequest JiraRequestFunc) ([]
 		return nil, err
 	}
 
+	for i, issue := range jiraResponse.Issues {
+		if issue.Fields.Epic != nil && issue.Fields.Epic.Key != "" {
+			// Fetch epic details
+			epicIssue, err := GetEpic(issue.Fields.Epic.Key)
+			if err != nil {
+				return nil, err
+			}
+			// Check if Feature key exists (can't use nil check on struct)
+			if epicIssue.Feature.Key != "" {
+				// Safe to access Feature structure (which is an embedded struct, not a pointer)
+				featureKey := epicIssue.Feature.Key
+				if featureKey != "" {
+					// We need to ensure Epic.Feature is properly initialized in the destination
+					// Initialize a Feature struct explicitly if needed
+					// Fields.Epic is guaranteed to be non-nil due to the outer check
+
+					// Update Epic with the feature
+					// We need to assign to Fields.Epic, which might require recreating the Epic struct
+					// Get the current Epic
+
+					newFeature := &Feature{
+						Summary: epicIssue.Feature.Summary,
+						Key:     featureKey,
+					}
+
+					// Assign the updated Epic back
+					jiraResponse.Issues[i].Fields.Feature = newFeature
+				}
+			}
+		}
+	}
 	return jiraResponse.Issues, nil
 }
 

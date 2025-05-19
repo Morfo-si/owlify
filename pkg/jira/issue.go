@@ -16,6 +16,17 @@ func GetIssue(issueKey string) ([]Issue, error) {
 	return []Issue{issueData}, nil
 }
 
+func GetEpic(issueKey string) (EpicResponse, error) {
+	url := fmt.Sprintf("%s/rest/api/2/issue/%s", jiraBaseURL, issueKey)
+
+	var issueData EpicResponse
+	if err := JIRAGetRequest(url, &issueData); err != nil {
+		return EpicResponse{}, fmt.Errorf("error fetching issue %s: %v", issueKey, err)
+	}
+
+	return issueData, nil
+}
+
 func UpdateIssueStatus(issueKey string, newStatus string) error {
 	issue, err := GetIssue(issueKey)
 	if err != nil {
