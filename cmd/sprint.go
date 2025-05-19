@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	boardId  int
-	sprintId int
+	boardId       int
+	sprintId      int
+	features bool
 
 	sprintCmd = &cobra.Command{
 		Use:   "sprint",
@@ -21,7 +22,7 @@ var (
 				return fmt.Errorf("sprint id is required")
 			}
 
-			issues, err := jira.FetchSprintIssuesWithEpic(sprintId, jira.JIRAGetRequest)
+			issues, err := jira.FetchSprintIssues(sprintId, jira.JIRAGetRequest, features)
 			if err != nil {
 				return fmt.Errorf("error fetching JIRA issues: %v", err)
 			}
@@ -77,7 +78,6 @@ var (
 			return nil
 		},
 	}
-
 )
 
 func init() {
@@ -86,6 +86,9 @@ func init() {
 	sprintCmd.Flags().IntVarP(&sprintId, "sprint", "s", 0, "JIRA sprint ID (required)")
 	sprintListCmd.Flags().IntVarP(&boardId, "board", "b", 0, "JIRA board ID (required)")
 	sprintGetCmd.Flags().IntVarP(&sprintId, "sprint", "s", 0, "JIRA sprint ID (required)")
+
+	// Add the fetch-features flag
+	sprintCmd.Flags().BoolVar(&features, "features", false, "Also fetch Feature data for epics (default: false)")
 
 	// Add subcommands to sprint command
 	sprintCmd.AddCommand(sprintListCmd, sprintGetCmd)

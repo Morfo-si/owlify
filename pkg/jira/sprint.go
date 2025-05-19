@@ -35,29 +35,7 @@ func FetchSprintByID(id int, makeGetRequest JiraRequestFunc) (Sprint, error) {
 	return sprintResp, nil
 }
 
-// FetchSprintIssues retrieves issues from a given sprint.
-// It uses the provided makeGetRequest function to make the API call to JIRA.
-//
-// Parameters:
-//   - sprintID: The ID of the sprint to fetch issues from
-//   - makeGetRequest: Function to make the HTTP GET request to JIRA
-//
-// Returns:
-//   - []Issue: A slice of Issue objects representing the issues in the sprint
-//   - error: An error if the request fails or the response cannot be parsed
-func FetchSprintIssues(sprintID int, makeGetRequest JiraRequestFunc) ([]Issue, error) {
-	var jiraResponse JiraResponse
-
-	sprintSearchURL := fmt.Sprintf("%s/rest/agile/1.0/sprint/%d/issue", jiraBaseURL, sprintID)
-
-	if err := makeGetRequest(sprintSearchURL, &jiraResponse); err != nil {
-		return nil, err
-	}
-
-	return jiraResponse.Issues, nil
-}
-
-// FetchSprintIssuesWithEpic retrieves issues from a given sprint with epic information included.
+// FetchSprintIssues retrieves issues from a given sprint with epic information included.
 // It uses the provided makeGetRequest function to make the API call to JIRA.
 //
 // Parameters:
@@ -67,7 +45,7 @@ func FetchSprintIssues(sprintID int, makeGetRequest JiraRequestFunc) ([]Issue, e
 // Returns:
 //   - []Issue: A slice of Issue objects representing the issues in the sprint with epic information
 //   - error: An error if the request fails or the response cannot be parsed
-func FetchSprintIssuesWithEpic(sprintID int, makeGetRequest JiraRequestFunc) ([]Issue, error) {
+func FetchSprintIssues(sprintID int, makeGetRequest JiraRequestFunc, fetchFeatures bool) ([]Issue, error) {
 	var jiraResponse JiraResponse
 	fields := []string{
 		"summary",
@@ -89,7 +67,17 @@ func FetchSprintIssuesWithEpic(sprintID int, makeGetRequest JiraRequestFunc) ([]
 		return nil, err
 	}
 
-	for i, issue := range jiraResponse.Issues {
+	if fetchFeatures {
+		if err := enrichIssuesWithFeatures(jiraResponse.Issues); err != nil {
+			return nil, err
+		}
+	}
+	return jiraResponse.Issues, nil
+}
+
+// enrichIssuesWithFeatures fetches and assigns Feature data for issues with Epics.
+func enrichIssuesWithFeatures(issues []Issue) error {
+	for i, issue := range issues {
 		if issue.Fields.Epic != nil && issue.Fields.Epic.Key != "" {
 			// Fetch epic details
 			// Add 1 second delay to avoid rate limiting
@@ -97,35 +85,26 @@ func FetchSprintIssuesWithEpic(sprintID int, makeGetRequest JiraRequestFunc) ([]
 			epicIssue, err := GetEpic(issue.Fields.Epic.Key)
 			if err != nil {
 				log.Printf("Failed to fetch epic details for issue %s: %v", issue.Key, err)
-				return nil, err
+				return err
 			}
 			// Check if Feature key exists (can't use nil check on struct)
 			if epicIssue.Feature.Key != "" {
 				// Safe to access Feature structure (which is an embedded struct, not a pointer)
 				featureKey := epicIssue.Feature.Key
 				if featureKey != "" {
-					// We need to ensure Epic.Feature is properly initialized in the destination
 					// Initialize a Feature struct explicitly if needed
-					// Fields.Epic is guaranteed to be non-nil due to the outer check
-
-					// Update Epic with the feature
-					// We need to assign to Fields.Epic, which might require recreating the Epic struct
-					// Get the current Epic
-
 					newFeature := &Feature{
 						Summary: epicIssue.Feature.Summary,
 						Key:     featureKey,
 					}
-
-					// Assign the updated Epic back
-					jiraResponse.Issues[i].Fields.Feature = newFeature
+					issues[i].Fields.Feature = newFeature
 				}
 			} else {
 				log.Printf("No Feature found for issue %s", issue.Key)
 			}
 		}
 	}
-	return jiraResponse.Issues, nil
+	return nil
 }
 
 // FetchOpenSprints retrieves all active sprints for a given board ID.
