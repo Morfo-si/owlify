@@ -2,9 +2,11 @@ package jira
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -90,8 +92,11 @@ func FetchSprintIssuesWithEpic(sprintID int, makeGetRequest JiraRequestFunc) ([]
 	for i, issue := range jiraResponse.Issues {
 		if issue.Fields.Epic != nil && issue.Fields.Epic.Key != "" {
 			// Fetch epic details
+			// Add 1 second delay to avoid rate limiting
+			time.Sleep(1 * time.Second)
 			epicIssue, err := GetEpic(issue.Fields.Epic.Key)
 			if err != nil {
+				log.Printf("Failed to fetch epic details for issue %s: %v", issue.Key, err)
 				return nil, err
 			}
 			// Check if Feature key exists (can't use nil check on struct)
@@ -115,6 +120,8 @@ func FetchSprintIssuesWithEpic(sprintID int, makeGetRequest JiraRequestFunc) ([]
 					// Assign the updated Epic back
 					jiraResponse.Issues[i].Fields.Feature = newFeature
 				}
+			} else {
+				log.Printf("No Feature found for issue %s", issue.Key)
 			}
 		}
 	}

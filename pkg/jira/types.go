@@ -23,8 +23,29 @@ type Epic struct {
 
 // Feature represents a JIRA feature
 type Feature struct {
+	Key     string `json:"key"` // Internal field name
 	Summary string `json:"summary"`
-	Key     string `json:"customfield_12313140"`
+}
+
+// UnmarshalJSON implements custom JSON unmarshaling for Feature to map customfield_12313140 to Key
+func (f *Feature) UnmarshalJSON(data []byte) error {
+	type FeatureAlias Feature
+	type FeatureTemp struct {
+		*FeatureAlias
+		CustomField string `json:"customfield_12313140"`
+	}
+
+	temp := &FeatureTemp{FeatureAlias: (*FeatureAlias)(f)}
+	if err := json.Unmarshal(data, temp); err != nil {
+		return err
+	}
+
+	// Map the custom field to Key if Key isn't already set
+	if f.Key == "" && temp.CustomField != "" {
+		f.Key = temp.CustomField
+	}
+
+	return nil
 }
 
 // Fields represents the content fields of a JIRA issue
@@ -32,7 +53,7 @@ type Fields struct {
 	Summary    string     `json:"summary"`
 	Assignee   Assignee   `json:"assignee"`
 	IssueType  IssueType  `json:"issuetype"`
-	StoryPoint float64    `json:"customfield_12310243"`
+	StoryPoint float64    `json:"storypoints"` // Custom field
 	Priority   Priority   `json:"priority"`
 	Status     Status     `json:"status"`
 	Epic       *Epic      `json:"epic,omitempty"`
@@ -45,7 +66,8 @@ func (f *Fields) UnmarshalJSON(data []byte) error {
 	type FieldsAlias Fields
 	type FieldsTemp struct {
 		*FieldsAlias
-		DueDate string `json:"duedate"`
+		CustomField float64 `json:"customfield_12310243"`
+		DueDate     string  `json:"duedate"`
 	}
 
 	temp := &FieldsTemp{FieldsAlias: (*FieldsAlias)(f)}
@@ -53,6 +75,10 @@ func (f *Fields) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	// Map the custom field to StoryPoint if StoryPoint isn't already set
+	if f.StoryPoint == 0 && temp.CustomField != 0 {
+		f.StoryPoint = temp.CustomField
+	}
 	// Parse DueDate if it's not empty
 	if temp.DueDate != "" {
 		// Try different date formats

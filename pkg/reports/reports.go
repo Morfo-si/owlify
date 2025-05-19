@@ -151,6 +151,30 @@ func getFlattenedHeaders(t reflect.Type, prefix string) []string {
 				}
 			}
 			continue
+		// Special handling for Feature field - create separate headers for its fields
+		} else if fieldName == "Feature" && field.Type.Kind() == reflect.Ptr {
+			// Get the Feature struct fields as separate headers
+			structType := field.Type.Elem() // Get the type the pointer points to
+			for j := 0; j < structType.NumField(); j++ {
+				featureField := structType.Field(j)
+				featureFieldName := featureField.Name
+				jsonTag := featureField.Tag.Get("json")
+				
+				if jsonTag != "" {
+					parts := strings.Split(jsonTag, ",")
+					if parts[0] != "" {
+						featureFieldName = parts[0]
+					}
+				}
+				
+				featureFieldName = capitalizeFirst(featureFieldName)
+				if prefix != "" {
+					headers = append(headers, prefix+"Feature."+featureFieldName)
+				} else {
+					headers = append(headers, "Feature."+featureFieldName)
+				}
+			}
+			continue
 		} else if field.Type.Kind() == reflect.Struct {
 			// Recursively get headers for nested struct
 			var nestedPrefix string
@@ -209,6 +233,19 @@ func getFlattenedValues(v reflect.Value) []string {
 			for j := 0; j < epicStruct.NumField(); j++ {
 				// Get the value as string for each field
 				fieldValue := fmt.Sprintf("%v", epicStruct.Field(j).Interface())
+				values = append(values, fieldValue)
+			}
+			continue
+		}
+		
+		// Handle Feature struct field by adding each of its fields separately
+		if fieldName == "feature" && field.Kind() == reflect.Ptr && !field.IsNil() {
+			featureStruct := field.Elem()
+			
+			// Instead of combining fields, get values for each field individually
+			for j := 0; j < featureStruct.NumField(); j++ {
+				// Get the value as string for each field
+				fieldValue := fmt.Sprintf("%v", featureStruct.Field(j).Interface())
 				values = append(values, fieldValue)
 			}
 			continue
