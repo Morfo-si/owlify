@@ -1,5 +1,22 @@
 # Owlify Release Notes
 
+## Version 0.0.5
+
+- eadf42b Added FeatureResponse struct type.
+- 46d6777 Replaced interface{} for any.
+- 549f0e2 More tests for jira/issue.go.
+- 2a1b1f8 More tests.
+- b1d1be2 Added more tests.
+- 6f5c872 Refactoring existing code.
+- cdb108b Updating Go plus dependencies.
+
+## Version 0.0.4
+
+- 553118e feat: add feature data fetching option for sprint issues with flag support
+- d5db455 docs: update release notes with new epic features and formatting improvements
+- bd801cc docs: add release notes documenting changes from
+v0.0.1 through v0.0.3
+
 ## Version 0.0.3
 
 - a8a6a3f feat: add feature field to epics and implement epic details fetching.
