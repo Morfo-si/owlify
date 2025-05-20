@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const (
@@ -68,42 +67,63 @@ func FetchSprintIssues(sprintID int, makeGetRequest JiraRequestFunc, fetchFeatur
 	}
 
 	if fetchFeatures {
-		if err := enrichIssuesWithFeatures(jiraResponse.Issues); err != nil {
+		if err := enrichIssuesWithFeatures(jiraResponse.Issues, makeGetRequest); err != nil {
 			return nil, err
 		}
 	}
 	return jiraResponse.Issues, nil
 }
 
-// enrichIssuesWithFeatures fetches and assigns Feature data for issues with Epics.
-func enrichIssuesWithFeatures(issues []Issue) error {
-	for i, issue := range issues {
+// uniqueEpicsFromIssues returns a map of all unique epics from list of Issues
+func uniqueEpicsFromIssues(issues []Issue) map[string]*Epic {
+	epics := make(map[string]*Epic)
+	for _, issue := range issues {
 		if issue.Fields.Epic != nil && issue.Fields.Epic.Key != "" {
-			// Fetch epic details
-			// Add 1 second delay to avoid rate limiting
-			time.Sleep(1 * time.Second)
-			epicIssue, err := GetEpic(issue.Fields.Epic.Key)
+			epics[issue.Fields.Epic.Key] = issue.Fields.Epic
+		}
+	}
+	return epics
+}
+
+func fetchFeatures(epics map[string]*Epic, makeGetRequest JiraRequestFunc) (map[string]*Feature, error) {
+	features := make(map[string]*Feature)
+	for _, epic := range epics {
+		if epic.Key != "" {
+			epicIssue, err := GetEpic(epic.Key, makeGetRequest)
 			if err != nil {
-				log.Printf("Failed to fetch epic details for issue %s: %v", issue.Key, err)
-				return err
+				log.Printf("Failed to fetch epic details for epic %s: %v", epic.Key, err)
+				continue
 			}
-			// Check if Feature key exists (can't use nil check on struct)
 			if epicIssue.Feature.Key != "" {
-				// Safe to access Feature structure (which is an embedded struct, not a pointer)
-				featureKey := epicIssue.Feature.Key
-				if featureKey != "" {
-					// Initialize a Feature struct explicitly if needed
-					newFeature := &Feature{
-						Summary: epicIssue.Feature.Summary,
-						Key:     featureKey,
-					}
-					issues[i].Fields.Feature = newFeature
+				features[epic.Key] = &Feature{
+					Key:     epicIssue.Feature.Key,
+					Summary: epicIssue.Feature.Summary,
 				}
-			} else {
-				log.Printf("No Feature found for issue %s", issue.Key)
 			}
 		}
 	}
+	return features, nil
+}
+
+func updateIssuesWithFeatures(issues []Issue, epicToFeature map[string]*Feature) {
+	for i := range issues {
+		epic := issues[i].Fields.Epic
+		if epic != nil {
+			if feature, ok := epicToFeature[epic.Key]; ok {
+				issues[i].Fields.Feature = feature
+			}
+		}
+	}
+}
+
+// enrichIssuesWithFeatures fetches and assigns Feature data for issues with Epics.
+func enrichIssuesWithFeatures(issues []Issue, makeGetRequest JiraRequestFunc) error {
+	updatedEpics := uniqueEpicsFromIssues(issues)
+	epicToFeature, err := fetchFeatures(updatedEpics, makeGetRequest)
+	if err != nil {
+		return err
+	}
+	updateIssuesWithFeatures(issues, epicToFeature)
 	return nil
 }
 

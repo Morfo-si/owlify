@@ -5,61 +5,49 @@ import (
 	"strings"
 )
 
-func GetIssue(issueKey string) ([]Issue, error) {
+func GetIssue(issueKey string, makeGetRequest JiraRequestFunc) (Issue, error) {
 	url := fmt.Sprintf("%s/rest/api/2/issue/%s", jiraBaseURL, issueKey)
 
 	var issueData Issue
-	if err := JIRAGetRequest(url, &issueData); err != nil {
-		return nil, fmt.Errorf("error fetching issue %s: %v", issueKey, err)
+	if err := makeGetRequest(url, &issueData); err != nil {
+		return Issue{}, fmt.Errorf("error fetching issue %s: %v", issueKey, err)
 	}
 
-	return []Issue{issueData}, nil
+	return issueData, nil
 }
 
-func GetEpic(issueKey string) (EpicResponse, error) {
+func GetEpic(issueKey string, makeGetRequest JiraRequestFunc) (EpicResponse, error) {
 	url := fmt.Sprintf("%s/rest/api/2/issue/%s", jiraBaseURL, issueKey)
 
 	var issueData EpicResponse
-	if err := JIRAGetRequest(url, &issueData); err != nil {
+	if err := makeGetRequest(url, &issueData); err != nil {
 		return EpicResponse{}, fmt.Errorf("error fetching issue %s: %v", issueKey, err)
 	}
 
 	return issueData, nil
 }
 
-func UpdateIssueStatus(issueKey string, newStatus string) error {
-	issue, err := GetIssue(issueKey)
-	if err != nil {
-		return fmt.Errorf("error getting issue: %v", err)
-	}
-
-	// First get available transitions
-	transitions, err := GetAvailableTransitions(issue[0])
-	if err != nil {
-		return fmt.Errorf("error getting available transitions: %v", err)
-	}
-
-	// Find the transition ID for the desired status
-	var transitionID string
+// GetValidTransitionValid checks if the transition is valid for the issue
+func GetValidTransitionID(status string, transitions []Transition) string {
+	var transitionName string
 	for _, t := range transitions {
-		if strings.EqualFold(t.Name, newStatus) {
-			transitionID = t.ID
+		if strings.EqualFold(t.Name, status) {
+			transitionName = t.ID
 			break
 		}
 	}
+	return transitionName
+}
 
-	if transitionID == "" {
-		return fmt.Errorf("no transition found for status: %s", newStatus)
-	}
-
+func UpdateIssueStatus(issueKey string, newStatus string, makePostRequest JiraPostRequestFunc) error {
 	// Create the transition payload
 	payload := UpdateTransition{
 		Transition: struct {
 			ID string `json:"id"`
-		}{ID: transitionID},
+		}{ID: newStatus},
 	}
 
-	url := fmt.Sprintf("%s/rest/api/2/issue/%s/transitions", jiraBaseURL, issue[0].Key)
+	url := fmt.Sprintf("%s/rest/api/2/issue/%s/transitions", jiraBaseURL, issueKey)
 	if err := makePostRequest(url, payload, nil); err != nil {
 		return fmt.Errorf("error transitioning issue: %v", err)
 	}
@@ -67,11 +55,11 @@ func UpdateIssueStatus(issueKey string, newStatus string) error {
 	return nil
 }
 
-func GetAvailableTransitions(issue Issue) ([]Transition, error) {
+func GetAvailableTransitions(issue Issue, makeGetRequest JiraRequestFunc) ([]Transition, error) {
 	url := fmt.Sprintf("%s/rest/api/2/issue/%s/transitions", jiraBaseURL, issue.Key)
 
 	var response TransitionResponse
-	if err := JIRAGetRequest(url, &response); err != nil {
+	if err := makeGetRequest(url, &response); err != nil {
 		return nil, fmt.Errorf("error fetching transitions for issue %s: %v", issue.Key, err)
 	}
 

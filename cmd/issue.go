@@ -21,7 +21,7 @@ var (
 				return
 			}
 
-			issue, err := jira.GetIssue(issueKey)
+			issue, err := jira.GetIssue(issueKey, jira.JIRAGetRequest)
 			if err != nil {
 				fmt.Printf("Error fetching issue %s: %v\n", issueKey, err)
 				return
@@ -47,7 +47,28 @@ var (
 				return
 			}
 
-			err := jira.UpdateIssueStatus(issueKey, newStatus)
+			// Fetch the issue to get the current status
+			issue, err := jira.GetIssue(issueKey, jira.JIRAGetRequest)
+			if err != nil {
+				fmt.Printf("Error fetching issue %s: %v\n", issueKey, err)
+				return
+			}
+			// Fetch the available status transitions
+			transitions, err := jira.GetAvailableTransitions(issue, jira.JIRAGetRequest)
+			if err != nil {
+				fmt.Printf("Error fetching transitions for issue %s: %v\n", issueKey, err)
+				return
+			}
+
+			// Validate transition name
+			status := jira.GetValidTransitionID(newStatus, transitions)
+			if status == "" {
+				fmt.Printf("Invalid transition name: %s\n", newStatus)
+				return
+			}
+
+			// Update the issue status
+			err = jira.UpdateIssueStatus(issue.Key, status, jira.JIRAPostRequest)
 			if err != nil {
 				fmt.Printf("Error updating issue %s status to %s: %v\n", issueKey, newStatus, err)
 				return

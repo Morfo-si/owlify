@@ -22,10 +22,16 @@ const (
 )
 
 // GenerateReport generates a report in the specified format for any slice of structs
-func GenerateReport(data interface{}, format OutputFormat) error {
+func GenerateReport(data any, format OutputFormat) error {
 	val := reflect.ValueOf(data)
+	
+	// Check if data is a slice, if not, wrap it in a slice
 	if val.Kind() != reflect.Slice {
-		return fmt.Errorf("data must be a slice")
+		// Create a slice of the same type as data
+		sliceType := reflect.SliceOf(val.Type())
+		slice := reflect.MakeSlice(sliceType, 1, 1)
+		slice.Index(0).Set(val)
+		val = slice
 	}
 
 	switch format {
@@ -36,7 +42,7 @@ func GenerateReport(data interface{}, format OutputFormat) error {
 		if val.Len() > 0 {
 			firstItem := val.Index(0)
 			headers := getFlattenedHeaders(firstItem.Type(), "")
-			table.SetHeader(headers)
+			table.Header(headers)
 		}
 
 		// Add rows with flattened values
