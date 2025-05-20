@@ -9,10 +9,12 @@ import (
 type EpicResponse struct {
 	Key     string `json:"key"`
 	Summary string `json:"summary"`
-	Feature struct {
-		Summary string `json:"summary"`
-		Key     string `json:"customfield_12313140"`
-	} `json:"fields"`
+	Feature FeatureResponse `json:"fields"`
+}
+
+type FeatureResponse struct {
+	Key     string `json:"customfield_12313140"`
+	Summary string `json:"summary"`
 }
 
 // Epic represents a JIRA epic

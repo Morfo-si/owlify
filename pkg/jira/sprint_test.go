@@ -623,10 +623,7 @@ func TestFetchFeatures(t *testing.T) {
 				"EPIC-1": {
 					Key:     "EPIC-1",
 					Summary: "Epic 1",
-					Feature: struct {
-						Summary string `json:"summary"`
-						Key     string `json:"customfield_12313140"`
-					}{
+					Feature: FeatureResponse {
 						Summary: "Feature 1",
 						Key:     "FEAT-1",
 					},
@@ -634,10 +631,7 @@ func TestFetchFeatures(t *testing.T) {
 				"EPIC-2": {
 					Key:     "EPIC-2",
 					Summary: "Epic 2",
-					Feature: struct {
-						Summary string `json:"summary"`
-						Key     string `json:"customfield_12313140"`
-					}{
+					Feature: FeatureResponse {
 						Summary: "Feature 2",
 						Key:     "FEAT-2",
 					},
@@ -658,10 +652,7 @@ func TestFetchFeatures(t *testing.T) {
 				"EPIC-1": {
 					Key:     "EPIC-1",
 					Summary: "Epic 1",
-					Feature: struct {
-						Summary string `json:"summary"`
-						Key     string `json:"customfield_12313140"`
-					}{
+					Feature: FeatureResponse {
 						Summary: "",
 						Key:     "",
 					},
@@ -742,10 +733,7 @@ func TestEnrichIssuesWithFeatures(t *testing.T) {
 				"EPIC-1": {
 					Key:     "EPIC-1",
 					Summary: "Epic 1",
-					Feature: struct {
-						Summary string `json:"summary"`
-						Key     string `json:"customfield_12313140"`
-					}{
+					Feature: FeatureResponse{
 						Summary: "Feature 1",
 						Key:     "FEAT-1",
 					},
@@ -753,10 +741,7 @@ func TestEnrichIssuesWithFeatures(t *testing.T) {
 				"EPIC-2": {
 					Key:     "EPIC-2",
 					Summary: "Epic 2",
-					Feature: struct {
-						Summary string `json:"summary"`
-						Key     string `json:"customfield_12313140"`
-					}{
+					Feature: FeatureResponse{
 						Summary: "Feature 2",
 						Key:     "FEAT-2",
 					},
