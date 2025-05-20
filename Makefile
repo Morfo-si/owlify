@@ -12,6 +12,8 @@ COVERAGE_HTML=$(COVERAGE_DIR)/coverage.html
 
 TAG = ${NEW_RELEASE_TAG}
 TARGET = novelist
+COMMIT = $(shell git rev-parse --short HEAD)
+BUILD_DATE = $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 
 check-tag:
 ifndef NEW_RELEASE_TAG
@@ -33,11 +35,13 @@ all: test build
 .PHONY: build
 build: check-tag
 	@echo "Building..."
+	LDFLAGS="-X main.version=$(TAG) -X main.commit=$(COMMIT) -X main.date=$(BUILD_DATE)" \
 	goreleaser build --clean
 
 .PHONY: publish
 publish: tidy tag check-token
 	go install github.com/goreleaser/goreleaser/v2@v2.9.0
+	LDFLAGS="-X main.version=$(TAG) -X main.commit=$(COMMIT) -X main.date=$(BUILD_DATE)" \
 	goreleaser release --clean
 
 tag: check-tag
