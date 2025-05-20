@@ -96,10 +96,10 @@ func createHTTPClient() *http.Client {
 	}
 }
 
-type JiraRequestFunc func(string, interface{}) error
-type JiraPostRequestFunc func(string, interface{}, interface{}) error
+type JiraRequestFunc func(string, any) error
+type JiraPostRequestFunc func(string, any, any) error
 
-func JIRAGetRequest(reqUrl string, target interface{}) error {
+func JIRAGetRequest(reqUrl string, target any) error {
 	// Replace client creation with new function
 	client := createHTTPClient()
 
@@ -120,7 +120,7 @@ func JIRAGetRequest(reqUrl string, target interface{}) error {
 	return json.NewDecoder(resp.Body).Decode(target)
 }
 
-func JIRAPostRequest(reqUrl string, payload interface{}, target interface{}) error {
+func JIRAPostRequest(reqUrl string, payload any, target any) error {
 	// Replace client creation with new function
 	client := createHTTPClient()
 

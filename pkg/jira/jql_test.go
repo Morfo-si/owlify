@@ -9,7 +9,7 @@ import (
 )
 
 // Mock function for JIRAGetRequest
-func mockJIRAGetRequest(url string, response interface{}) error {
+func mockJIRAGetRequest(url string, response any) error {
 	if url == "error" {
 		return errors.New("failed to fetch issues")
 	}
@@ -84,7 +84,7 @@ func TestFetchIssuesFromJQL_APIError(t *testing.T) {
 	jql := "error"
 
 	// Mock function that returns an error
-	mockErrorFunc := func(url string, response interface{}) error {
+	mockErrorFunc := func(url string, response any) error {
 		return errors.New("API failure")
 	}
 
@@ -95,7 +95,7 @@ func TestFetchIssuesFromJQL_APIError(t *testing.T) {
 
 func TestFetchIssuesFromJQL_WithOverdueIssue(t *testing.T) {
 	// Create a mock function that returns an overdue issue
-	mockOverdueFunc := func(url string, response interface{}) error {
+	mockOverdueFunc := func(url string, response any) error {
 		// Create a date in the past
 		pastDate := time.Now().AddDate(0, 0, -1) // Yesterday
 

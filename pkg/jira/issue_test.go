@@ -42,7 +42,7 @@ func TestGetIssue(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock request function
-			mockRequest := func(url string, target interface{}) error {
+			mockRequest := func(url string, target any) error {
 				if tt.mockError != nil {
 					return tt.mockError
 				}
@@ -155,7 +155,7 @@ func TestUpdateIssueStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock post request function
-			mockPostRequest := func(url string, payload interface{}, response interface{}) error {
+			mockPostRequest := func(url string, payload any, response any) error {
 				// Verify URL format
 				expectedURL := fmt.Sprintf("%s/rest/api/2/issue/%s/transitions", jiraBaseURL, tt.issueKey)
 				if url != expectedURL {
@@ -224,17 +224,17 @@ func TestGetAvailableTransitions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock request function
-			mockRequest := func(url string, target interface{}) error {
+			mockRequest := func(url string, target any) error {
 				if tt.mockError != nil {
 					return tt.mockError
 				}
-				
+
 				// Check URL format
 				expectedURL := fmt.Sprintf("%s/rest/api/2/issue/%s/transitions", jiraBaseURL, tt.issue.Key)
 				if url != expectedURL {
 					t.Errorf("incorrect URL: got %s, want %s", url, expectedURL)
 				}
-				
+
 				// Marshal and unmarshal to simulate JSON response
 				data, _ := json.Marshal(tt.mockResponse)
 				return json.Unmarshal(data, target)

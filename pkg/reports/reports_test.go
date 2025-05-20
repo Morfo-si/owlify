@@ -111,7 +111,7 @@ func TestGetFlattenedValues(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		fields interface{}
+		fields any
 		want   []string
 	}{
 		{
@@ -150,10 +150,10 @@ func TestGenerateReportWithNonSliceData(t *testing.T) {
 
 	// Test with a single struct (non-slice)
 	person := Person{Name: "Alice", Age: 30}
-	
+
 	// Test with different formats
 	formats := []OutputFormat{TableFormat, JSONFormat, CSVFormat}
-	
+
 	for _, format := range formats {
 		t.Run(string(format), func(t *testing.T) {
 			err := GenerateReport(person, format)

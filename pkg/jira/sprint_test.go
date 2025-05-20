@@ -16,7 +16,7 @@ import (
 )
 
 // Mock function for JiraRequestFunc for FetchOpenSprints call
-func mockOpenSprintsRequest(url string, response interface{}) error {
+func mockOpenSprintsRequest(url string, response any) error {
 	if url == "error" {
 		return errors.New("failed to fetch sprints")
 	}
@@ -51,7 +51,7 @@ func TestFetchOpenSprints_APIError(t *testing.T) {
 	boardID := 123
 
 	// Mock function to simulate an API error
-	mockErrorFunc := func(url string, response interface{}) error {
+	mockErrorFunc := func(url string, response any) error {
 		return errors.New("API failure")
 	}
 
@@ -64,7 +64,7 @@ func TestFetchOpenSprints_EmptyResponse(t *testing.T) {
 	boardID := 123
 
 	// Mock function returning an empty sprint list
-	mockEmptyFunc := func(url string, response interface{}) error {
+	mockEmptyFunc := func(url string, response any) error {
 		if r, ok := response.(*SprintResponse); ok {
 			*r = SprintResponse{Values: []Sprint{}}
 			return nil
@@ -303,7 +303,7 @@ func TestFetchSprintByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock request function
-			mockMakeRequest := func(url string, target interface{}) error {
+			mockMakeRequest := func(url string, target any) error {
 				if tt.mockError != nil {
 					return tt.mockError
 				}
@@ -370,7 +370,7 @@ func TestFetchSprintIssues(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock request function
-			mockMakeRequest := func(url string, target interface{}) error {
+			mockMakeRequest := func(url string, target any) error {
 				if tt.mockError != nil {
 					return tt.mockError
 				}
@@ -711,11 +711,11 @@ func TestFetchFeatures(t *testing.T) {
 					continue
 				}
 				if actualFeature.Key != expectedFeature.Key {
-					t.Errorf("Epic %s: expected feature key %s, got %s", 
+					t.Errorf("Epic %s: expected feature key %s, got %s",
 						epicKey, expectedFeature.Key, actualFeature.Key)
 				}
 				if actualFeature.Summary != expectedFeature.Summary {
-					t.Errorf("Epic %s: expected feature summary %s, got %s", 
+					t.Errorf("Epic %s: expected feature summary %s, got %s",
 						epicKey, expectedFeature.Summary, actualFeature.Summary)
 				}
 			}
@@ -780,7 +780,7 @@ func TestEnrichIssuesWithFeatures(t *testing.T) {
 				{Fields: Fields{Epic: nil}},
 				{Fields: Fields{Epic: &Epic{Key: "", Summary: ""}}},
 			},
-			mockEpics:      map[string]EpicResponse{},
+			mockEpics: map[string]EpicResponse{},
 			expectedIssues: []Issue{
 				{Fields: Fields{Epic: nil}},
 				{Fields: Fields{Epic: &Epic{Key: "", Summary: ""}}},
@@ -809,7 +809,7 @@ func TestEnrichIssuesWithFeatures(t *testing.T) {
 			}
 
 			// Create mock request function that will be used by the EpicFetcher
-			mockMakeRequest := func(url string, target interface{}) error {
+			mockMakeRequest := func(url string, target any) error {
 				if tt.mockError != nil {
 					return tt.mockError
 				}
@@ -845,17 +845,17 @@ func TestEnrichIssuesWithFeatures(t *testing.T) {
 
 			// Check that issues were properly enriched
 			assert.Equal(t, len(tt.expectedIssues), len(testIssues))
-			
+
 			for i, issue := range testIssues {
 				expected := tt.expectedIssues[i]
-				
+
 				// Check Epic
 				if expected.Fields.Epic == nil {
 					assert.Nil(t, issue.Fields.Epic)
 				} else if issue.Fields.Epic != nil {
 					assert.Equal(t, expected.Fields.Epic.Key, issue.Fields.Epic.Key)
 				}
-				
+
 				// Check Feature
 				if expected.Fields.Feature == nil {
 					assert.Nil(t, issue.Fields.Feature)
