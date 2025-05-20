@@ -141,3 +141,23 @@ func TestGetFlattenedValues(t *testing.T) {
 		})
 	}
 }
+
+func TestGenerateReportWithNonSliceData(t *testing.T) {
+	type Person struct {
+		Name string
+		Age  int
+	}
+
+	// Test with a single struct (non-slice)
+	person := Person{Name: "Alice", Age: 30}
+	
+	// Test with different formats
+	formats := []OutputFormat{TableFormat, JSONFormat, CSVFormat}
+	
+	for _, format := range formats {
+		t.Run(string(format), func(t *testing.T) {
+			err := GenerateReport(person, format)
+			assert.NoError(t, err)
+		})
+	}
+}

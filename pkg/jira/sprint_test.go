@@ -5,8 +5,10 @@ package jira
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -325,6 +327,261 @@ func TestFetchSprintByID(t *testing.T) {
 				sprint.Name != tt.expectedSprint.Name ||
 				sprint.State != tt.expectedSprint.State {
 				t.Errorf("FetchSprintByID() = %v, expected %v", sprint, tt.expectedSprint)
+			}
+		})
+	}
+}
+
+func TestFetchSprintIssues(t *testing.T) {
+	tests := []struct {
+		name           string
+		sprintID       int
+		mockResponse   JiraResponse
+		mockError      error
+		fetchFeatures  bool
+		expectedIssues []Issue
+		expectedError  bool
+	}{
+		{
+			name:     "successful fetch without features",
+			sprintID: 123,
+			mockResponse: JiraResponse{
+				Issues: []Issue{
+					{Key: "TEST-1", Fields: Fields{Summary: "Test Issue 1"}},
+					{Key: "TEST-2", Fields: Fields{Summary: "Test Issue 2"}},
+				},
+			},
+			mockError:      nil,
+			fetchFeatures:  false,
+			expectedIssues: []Issue{{Key: "TEST-1"}, {Key: "TEST-2"}},
+			expectedError:  false,
+		},
+		{
+			name:           "api error",
+			sprintID:       456,
+			mockResponse:   JiraResponse{},
+			mockError:      errors.New("API error"),
+			fetchFeatures:  false,
+			expectedIssues: nil,
+			expectedError:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create mock request function
+			mockMakeRequest := func(url string, target interface{}) error {
+				if tt.mockError != nil {
+					return tt.mockError
+				}
+
+				// Check URL format contains expected fields
+				expectedURL := fmt.Sprintf("%s/rest/agile/1.0/sprint/%d/issue?fields=", jiraBaseURL, tt.sprintID)
+				if !strings.HasPrefix(url, expectedURL) {
+					t.Errorf("incorrect URL prefix: got %s, want %s", url, expectedURL)
+				}
+
+				// Marshal and unmarshal to simulate JSON response handling
+				data, _ := json.Marshal(tt.mockResponse)
+				return json.Unmarshal(data, target)
+			}
+
+			// Call the function being tested
+			issues, err := FetchSprintIssues(tt.sprintID, mockMakeRequest, tt.fetchFeatures)
+
+			// Check error
+			if (err != nil) != tt.expectedError {
+				t.Errorf("FetchSprintIssues() error = %v, expectedError = %v", err, tt.expectedError)
+				return
+			}
+
+			// Check issues length
+			if len(issues) != len(tt.expectedIssues) {
+				t.Errorf("FetchSprintIssues() returned %d issues, expected %d", len(issues), len(tt.expectedIssues))
+				return
+			}
+
+			// Check issue keys
+			for i, issue := range issues {
+				if issue.Key != tt.mockResponse.Issues[i].Key {
+					t.Errorf("Issue %d: expected key %s, got %s", i, tt.mockResponse.Issues[i].Key, issue.Key)
+				}
+			}
+		})
+	}
+}
+
+func TestUniqueEpicsFromIssues(t *testing.T) {
+	tests := []struct {
+		name          string
+		issues        []Issue
+		expectedEpics map[string]*Epic
+	}{
+		{
+			name: "multiple issues with same epic",
+			issues: []Issue{
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-1", Summary: "Epic 1"}}},
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-1", Summary: "Epic 1"}}},
+			},
+			expectedEpics: map[string]*Epic{
+				"EPIC-1": {Key: "EPIC-1", Summary: "Epic 1"},
+			},
+		},
+		{
+			name: "issues with different epics",
+			issues: []Issue{
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-1", Summary: "Epic 1"}}},
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-2", Summary: "Epic 2"}}},
+			},
+			expectedEpics: map[string]*Epic{
+				"EPIC-1": {Key: "EPIC-1", Summary: "Epic 1"},
+				"EPIC-2": {Key: "EPIC-2", Summary: "Epic 2"},
+			},
+		},
+		{
+			name: "issues with nil epic",
+			issues: []Issue{
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-1", Summary: "Epic 1"}}},
+				{Fields: Fields{Epic: nil}},
+			},
+			expectedEpics: map[string]*Epic{
+				"EPIC-1": {Key: "EPIC-1", Summary: "Epic 1"},
+			},
+		},
+		{
+			name: "issues with empty epic key",
+			issues: []Issue{
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-1", Summary: "Epic 1"}}},
+				{Fields: Fields{Epic: &Epic{Key: "", Summary: "Empty Key"}}},
+			},
+			expectedEpics: map[string]*Epic{
+				"EPIC-1": {Key: "EPIC-1", Summary: "Epic 1"},
+			},
+		},
+		{
+			name:          "empty issues list",
+			issues:        []Issue{},
+			expectedEpics: map[string]*Epic{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			epics := uniqueEpicsFromIssues(tt.issues)
+
+			// Check map length
+			assert.Equal(t, len(tt.expectedEpics), len(epics), "Epic map length mismatch")
+
+			// Check map contents
+			for key, expectedEpic := range tt.expectedEpics {
+				actualEpic, exists := epics[key]
+				assert.True(t, exists, "Expected epic with key %s not found", key)
+				assert.Equal(t, expectedEpic.Key, actualEpic.Key, "Epic key mismatch")
+				assert.Equal(t, expectedEpic.Summary, actualEpic.Summary, "Epic summary mismatch")
+			}
+		})
+	}
+}
+
+func TestUpdateIssuesWithFeatures(t *testing.T) {
+	tests := []struct {
+		name          string
+		issues        []Issue
+		epicToFeature map[string]*Feature
+		expected      []Issue
+	}{
+		{
+			name: "issues with epics get features assigned",
+			issues: []Issue{
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-1"}}},
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-2"}}},
+			},
+			epicToFeature: map[string]*Feature{
+				"EPIC-1": {Key: "FEAT-1", Summary: "Feature 1"},
+				"EPIC-2": {Key: "FEAT-2", Summary: "Feature 2"},
+			},
+			expected: []Issue{
+				{Fields: Fields{
+					Epic:    &Epic{Key: "EPIC-1"},
+					Feature: &Feature{Key: "FEAT-1", Summary: "Feature 1"},
+				}},
+				{Fields: Fields{
+					Epic:    &Epic{Key: "EPIC-2"},
+					Feature: &Feature{Key: "FEAT-2", Summary: "Feature 2"},
+				}},
+			},
+		},
+		{
+			name: "issues without epics don't get features",
+			issues: []Issue{
+				{Fields: Fields{Epic: nil}},
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-1"}}},
+			},
+			epicToFeature: map[string]*Feature{
+				"EPIC-1": {Key: "FEAT-1", Summary: "Feature 1"},
+			},
+			expected: []Issue{
+				{Fields: Fields{Epic: nil, Feature: nil}},
+				{Fields: Fields{
+					Epic:    &Epic{Key: "EPIC-1"},
+					Feature: &Feature{Key: "FEAT-1", Summary: "Feature 1"},
+				}},
+			},
+		},
+		{
+			name: "epics without matching features",
+			issues: []Issue{
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-1"}}},
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-2"}}},
+			},
+			epicToFeature: map[string]*Feature{
+				"EPIC-1": {Key: "FEAT-1", Summary: "Feature 1"},
+				// No feature for EPIC-2
+			},
+			expected: []Issue{
+				{Fields: Fields{
+					Epic:    &Epic{Key: "EPIC-1"},
+					Feature: &Feature{Key: "FEAT-1", Summary: "Feature 1"},
+				}},
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-2"}, Feature: nil}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Make a copy of the issues to avoid modifying the test data
+			testIssues := make([]Issue, len(tt.issues))
+			copy(testIssues, tt.issues)
+
+			// Call the function being tested
+			updateIssuesWithFeatures(testIssues, tt.epicToFeature)
+
+			// Verify results
+			for i, issue := range testIssues {
+				expected := tt.expected[i]
+
+				// Check if Epic is nil in both
+				if issue.Fields.Epic == nil && expected.Fields.Epic == nil {
+					// Both are nil, this is correct
+				} else if issue.Fields.Epic == nil || expected.Fields.Epic == nil {
+					t.Errorf("Issue %d: Epic mismatch - got %v, expected %v",
+						i, issue.Fields.Epic, expected.Fields.Epic)
+				} else if issue.Fields.Epic.Key != expected.Fields.Epic.Key {
+					t.Errorf("Issue %d: Epic key mismatch - got %s, expected %s",
+						i, issue.Fields.Epic.Key, expected.Fields.Epic.Key)
+				}
+
+				// Check if Feature is nil in both
+				if issue.Fields.Feature == nil && expected.Fields.Feature == nil {
+					// Both are nil, this is correct
+				} else if issue.Fields.Feature == nil || expected.Fields.Feature == nil {
+					t.Errorf("Issue %d: Feature mismatch - got %v, expected %v",
+						i, issue.Fields.Feature, expected.Fields.Feature)
+				} else {
+					assert.Equal(t, expected.Fields.Feature.Key, issue.Fields.Feature.Key)
+					assert.Equal(t, expected.Fields.Feature.Summary, issue.Fields.Feature.Summary)
+				}
 			}
 		})
 	}
