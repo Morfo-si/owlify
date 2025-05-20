@@ -85,11 +85,11 @@ func uniqueEpicsFromIssues(issues []Issue) map[string]*Epic {
 	return epics
 }
 
-func fetchFeatures(epics map[string]*Epic, makeGetRequest JiraRequestFunc) (map[string]*Feature, error) {
+func fetchFeatures(epics map[string]*Epic, epicFetcher EpicFetcher) (map[string]*Feature, error) {
 	features := make(map[string]*Feature)
 	for _, epic := range epics {
 		if epic.Key != "" {
-			epicIssue, err := GetEpic(epic.Key, makeGetRequest)
+			epicIssue, err := epicFetcher.FetchEpic(epic.Key)
 			if err != nil {
 				log.Printf("Failed to fetch epic details for epic %s: %v", epic.Key, err)
 				continue
@@ -119,7 +119,8 @@ func updateIssuesWithFeatures(issues []Issue, epicToFeature map[string]*Feature)
 // enrichIssuesWithFeatures fetches and assigns Feature data for issues with Epics.
 func enrichIssuesWithFeatures(issues []Issue, makeGetRequest JiraRequestFunc) error {
 	updatedEpics := uniqueEpicsFromIssues(issues)
-	epicToFeature, err := fetchFeatures(updatedEpics, makeGetRequest)
+	epicFetcher := NewEpicFetcher(makeGetRequest)
+	epicToFeature, err := fetchFeatures(updatedEpics, epicFetcher)
 	if err != nil {
 		return err
 	}

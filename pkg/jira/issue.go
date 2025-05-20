@@ -16,6 +16,27 @@ func GetIssue(issueKey string, makeGetRequest JiraRequestFunc) (Issue, error) {
 	return issueData, nil
 }
 
+// EpicFetcher defines an interface for fetching epic details
+type EpicFetcher interface {
+	FetchEpic(epicKey string) (EpicResponse, error)
+}
+
+// DefaultEpicFetcher implements EpicFetcher using JiraRequestFunc
+type DefaultEpicFetcher struct {
+	makeGetRequest JiraRequestFunc
+}
+
+// NewEpicFetcher creates a new DefaultEpicFetcher
+func NewEpicFetcher(makeGetRequest JiraRequestFunc) EpicFetcher {
+	return &DefaultEpicFetcher{makeGetRequest: makeGetRequest}
+}
+
+// FetchEpic fetches the epic details for the given issue key
+func (f *DefaultEpicFetcher) FetchEpic(epicKey string) (EpicResponse, error) {
+	return GetEpic(epicKey, f.makeGetRequest)
+}
+
+// GetEpic fetches the epic details for the given issue key.
 func GetEpic(issueKey string, makeGetRequest JiraRequestFunc) (EpicResponse, error) {
 	url := fmt.Sprintf("%s/rest/api/2/issue/%s", jiraBaseURL, issueKey)
 

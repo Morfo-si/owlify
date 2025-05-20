@@ -586,3 +586,284 @@ func TestUpdateIssuesWithFeatures(t *testing.T) {
 		})
 	}
 }
+
+// MockEpicFetcher implements EpicFetcher for testing
+type MockEpicFetcher struct {
+	epics map[string]EpicResponse
+	err   error
+}
+
+func (m *MockEpicFetcher) FetchEpic(epicKey string) (EpicResponse, error) {
+	if m.err != nil {
+		return EpicResponse{}, m.err
+	}
+	epic, exists := m.epics[epicKey]
+	if !exists {
+		return EpicResponse{}, fmt.Errorf("epic not found: %s", epicKey)
+	}
+	return epic, nil
+}
+
+func TestFetchFeatures(t *testing.T) {
+	tests := []struct {
+		name          string
+		epics         map[string]*Epic
+		mockEpics     map[string]EpicResponse
+		mockError     error
+		expected      map[string]*Feature
+		expectedError bool
+	}{
+		{
+			name: "successful feature fetch",
+			epics: map[string]*Epic{
+				"EPIC-1": {Key: "EPIC-1", Summary: "Epic 1"},
+				"EPIC-2": {Key: "EPIC-2", Summary: "Epic 2"},
+			},
+			mockEpics: map[string]EpicResponse{
+				"EPIC-1": {
+					Key:     "EPIC-1",
+					Summary: "Epic 1",
+					Feature: struct {
+						Summary string `json:"summary"`
+						Key     string `json:"customfield_12313140"`
+					}{
+						Summary: "Feature 1",
+						Key:     "FEAT-1",
+					},
+				},
+				"EPIC-2": {
+					Key:     "EPIC-2",
+					Summary: "Epic 2",
+					Feature: struct {
+						Summary string `json:"summary"`
+						Key     string `json:"customfield_12313140"`
+					}{
+						Summary: "Feature 2",
+						Key:     "FEAT-2",
+					},
+				},
+			},
+			expected: map[string]*Feature{
+				"EPIC-1": {Key: "FEAT-1", Summary: "Feature 1"},
+				"EPIC-2": {Key: "FEAT-2", Summary: "Feature 2"},
+			},
+			expectedError: false,
+		},
+		{
+			name: "epic with no feature",
+			epics: map[string]*Epic{
+				"EPIC-1": {Key: "EPIC-1", Summary: "Epic 1"},
+			},
+			mockEpics: map[string]EpicResponse{
+				"EPIC-1": {
+					Key:     "EPIC-1",
+					Summary: "Epic 1",
+					Feature: struct {
+						Summary string `json:"summary"`
+						Key     string `json:"customfield_12313140"`
+					}{
+						Summary: "",
+						Key:     "",
+					},
+				},
+			},
+			expected:      map[string]*Feature{},
+			expectedError: false,
+		},
+		{
+			name: "error fetching epic",
+			epics: map[string]*Epic{
+				"ERROR-EPIC": {Key: "ERROR-EPIC", Summary: "Error Epic"},
+			},
+			mockError:     fmt.Errorf("mock error fetching epic"),
+			expected:      map[string]*Feature{},
+			expectedError: false, // We don't return an error, just log it
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create mock epic fetcher
+			mockFetcher := &MockEpicFetcher{
+				epics: tt.mockEpics,
+				err:   tt.mockError,
+			}
+
+			// Call the function being tested
+			features, err := fetchFeatures(tt.epics, mockFetcher)
+
+			// Check error
+			if (err != nil) != tt.expectedError {
+				t.Errorf("fetchFeatures() error = %v, expectedError = %v", err, tt.expectedError)
+				return
+			}
+
+			// Check features
+			if len(features) != len(tt.expected) {
+				t.Errorf("fetchFeatures() returned %d features, expected %d", len(features), len(tt.expected))
+				return
+			}
+
+			for epicKey, expectedFeature := range tt.expected {
+				actualFeature, exists := features[epicKey]
+				if !exists {
+					t.Errorf("Expected feature for epic %s not found", epicKey)
+					continue
+				}
+				if actualFeature.Key != expectedFeature.Key {
+					t.Errorf("Epic %s: expected feature key %s, got %s", 
+						epicKey, expectedFeature.Key, actualFeature.Key)
+				}
+				if actualFeature.Summary != expectedFeature.Summary {
+					t.Errorf("Epic %s: expected feature summary %s, got %s", 
+						epicKey, expectedFeature.Summary, actualFeature.Summary)
+				}
+			}
+		})
+	}
+}
+
+func TestEnrichIssuesWithFeatures(t *testing.T) {
+	tests := []struct {
+		name           string
+		issues         []Issue
+		mockEpics      map[string]EpicResponse
+		mockError      error
+		expectedIssues []Issue
+		expectedError  bool
+	}{
+		{
+			name: "successful feature enrichment",
+			issues: []Issue{
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-1", Summary: "Epic 1"}}},
+				{Fields: Fields{Epic: &Epic{Key: "EPIC-2", Summary: "Epic 2"}}},
+			},
+			mockEpics: map[string]EpicResponse{
+				"EPIC-1": {
+					Key:     "EPIC-1",
+					Summary: "Epic 1",
+					Feature: struct {
+						Summary string `json:"summary"`
+						Key     string `json:"customfield_12313140"`
+					}{
+						Summary: "Feature 1",
+						Key:     "FEAT-1",
+					},
+				},
+				"EPIC-2": {
+					Key:     "EPIC-2",
+					Summary: "Epic 2",
+					Feature: struct {
+						Summary string `json:"summary"`
+						Key     string `json:"customfield_12313140"`
+					}{
+						Summary: "Feature 2",
+						Key:     "FEAT-2",
+					},
+				},
+			},
+			expectedIssues: []Issue{
+				{Fields: Fields{
+					Epic:    &Epic{Key: "EPIC-1", Summary: "Epic 1"},
+					Feature: &Feature{Key: "FEAT-1", Summary: "Feature 1"},
+				}},
+				{Fields: Fields{
+					Epic:    &Epic{Key: "EPIC-2", Summary: "Epic 2"},
+					Feature: &Feature{Key: "FEAT-2", Summary: "Feature 2"},
+				}},
+			},
+			expectedError: false,
+		},
+		{
+			name: "issues without epics",
+			issues: []Issue{
+				{Fields: Fields{Epic: nil}},
+				{Fields: Fields{Epic: &Epic{Key: "", Summary: ""}}},
+			},
+			mockEpics:      map[string]EpicResponse{},
+			expectedIssues: []Issue{
+				{Fields: Fields{Epic: nil}},
+				{Fields: Fields{Epic: &Epic{Key: "", Summary: ""}}},
+			},
+			expectedError: false,
+		},
+		{
+			name: "error fetching epic - logs error but continues",
+			issues: []Issue{
+				{Fields: Fields{Epic: &Epic{Key: "ERROR-EPIC", Summary: "Error Epic"}}},
+			},
+			mockError: fmt.Errorf("failed to fetch epic"),
+			expectedIssues: []Issue{
+				{Fields: Fields{Epic: &Epic{Key: "ERROR-EPIC", Summary: "Error Epic"}}},
+			},
+			expectedError: false, // The function logs errors but doesn't return them
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a copy of the issues to avoid modifying the test data
+			testIssues := make([]Issue, len(tt.issues))
+			for i, issue := range tt.issues {
+				testIssues[i] = issue
+			}
+
+			// Create mock request function that will be used by the EpicFetcher
+			mockMakeRequest := func(url string, target interface{}) error {
+				if tt.mockError != nil {
+					return tt.mockError
+				}
+
+				// Extract epic key from URL
+				parts := strings.Split(url, "/")
+				epicKey := parts[len(parts)-1]
+
+				// Find the matching mock epic
+				epicResp, exists := tt.mockEpics[epicKey]
+				if !exists {
+					return fmt.Errorf("epic not found: %s", epicKey)
+				}
+
+				// Marshal and unmarshal to simulate JSON response handling
+				data, _ := json.Marshal(epicResp)
+				return json.Unmarshal(data, target)
+			}
+
+			// Call the function being tested
+			err := enrichIssuesWithFeatures(testIssues, mockMakeRequest)
+
+			// Check error
+			if (err != nil) != tt.expectedError {
+				t.Errorf("enrichIssuesWithFeatures() error = %v, expectedError = %v", err, tt.expectedError)
+				return
+			}
+
+			// If we expect an error, no need to check the issues
+			if tt.expectedError {
+				return
+			}
+
+			// Check that issues were properly enriched
+			assert.Equal(t, len(tt.expectedIssues), len(testIssues))
+			
+			for i, issue := range testIssues {
+				expected := tt.expectedIssues[i]
+				
+				// Check Epic
+				if expected.Fields.Epic == nil {
+					assert.Nil(t, issue.Fields.Epic)
+				} else if issue.Fields.Epic != nil {
+					assert.Equal(t, expected.Fields.Epic.Key, issue.Fields.Epic.Key)
+				}
+				
+				// Check Feature
+				if expected.Fields.Feature == nil {
+					assert.Nil(t, issue.Fields.Feature)
+				} else if issue.Fields.Feature != nil {
+					assert.Equal(t, expected.Fields.Feature.Key, issue.Fields.Feature.Key)
+					assert.Equal(t, expected.Fields.Feature.Summary, issue.Fields.Feature.Summary)
+				}
+			}
+		})
+	}
+}
