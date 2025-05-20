@@ -37,7 +37,7 @@ build: check-tag
 
 .PHONY: publish
 publish: tidy tag check-token
-	go install github.com/goreleaser/goreleaser@latest
+	go install github.com/goreleaser/goreleaser/v2@v2.9.0
 	goreleaser release --clean
 
 tag: check-tag
@@ -123,4 +123,4 @@ help:
 	@echo "  make deps         - Install dependencies"
 	@echo "  make fmt          - Format code"
 	@echo "  make check        - Run all checks (test, lint, vet)"
-	@echo "  make help         - Show this help message" 
+	@echo "  make help         - Show this help message"
