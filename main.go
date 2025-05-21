@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/morfo-si/owlify/cmd"
+	"github.com/morfo-si/owlify/pkg/config"
 )
 
 // Version information - will be set during build
@@ -15,6 +16,12 @@ var (
 )
 
 func main() {
+	// Initialize configuration
+	if err := config.Initialize(); err != nil {
+		fmt.Fprintf(os.Stderr, "Configuration error: %v\n", err)
+		os.Exit(1)
+	}
+	
 	// Pass version info to command package
 	cmd.SetVersionInfo(version, commit, date)
 	
