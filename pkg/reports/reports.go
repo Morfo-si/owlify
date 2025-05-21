@@ -4,10 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"reflect"
-
-	"github.com/olekukonko/tablewriter"
 )
 
 // OutputFormat represents the type of report output
@@ -25,9 +22,9 @@ func GenerateReport(data interface{}, format OutputFormat) error {
 	if data == nil {
 		return nil
 	}
-	
+
 	v := reflect.ValueOf(data)
-	
+
 	// Handle non-slice data by wrapping it in a slice
 	if v.Kind() != reflect.Slice {
 		// Create a slice of the same type as data
@@ -45,7 +42,7 @@ func GenerateReport(data interface{}, format OutputFormat) error {
 		fmt.Println("No data available.")
 		return nil
 	}
-	
+
 	// Continue with normal report generation
 	switch format {
 	case TableFormat:
@@ -57,28 +54,6 @@ func GenerateReport(data interface{}, format OutputFormat) error {
 	default:
 		return fmt.Errorf("unsupported output format: %s", format)
 	}
-}
-
-// generateTableReport creates a table-formatted report
-func generateTableReport(val reflect.Value) error {
-	table := tablewriter.NewWriter(os.Stdout)
-
-	// Get flattened headers from struct fields
-	if val.Len() > 0 {
-		firstItem := val.Index(0)
-		headers := GetFlattenedHeaders(firstItem.Interface())
-		table.Header(headers)
-	}
-
-	// Add rows with flattened values
-	for i := 0; i < val.Len(); i++ {
-		item := val.Index(i)
-		row := getFlattenedValues(item)
-		table.Append(row)
-	}
-
-	table.Render()
-	return nil
 }
 
 // For JSON output, ensure numeric fields are properly marshaled as numbers
