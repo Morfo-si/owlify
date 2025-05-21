@@ -2,6 +2,7 @@
 
 ## Version 0.0.x
 
+- 1738d92 feat: add support for configuration via .env file
 - e5b591e feat: add version information to the CLI
 - b07c16b Update goreleaser to v2.
 - d42a9d7 Updating Release Notes for 0.0.5.
