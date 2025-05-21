@@ -7,8 +7,8 @@ import (
 
 // Epic represents a JIRA epic
 type EpicResponse struct {
-	Key     string `json:"key"`
-	Summary string `json:"summary"`
+	Key     string          `json:"key"`
+	Summary string          `json:"summary"`
 	Feature FeatureResponse `json:"fields"`
 }
 
@@ -165,16 +165,16 @@ const (
 
 // String returns the string representation of the sprint state
 func (s SprintState) String() string {
-    return string(s)
+	return string(s)
 }
 
 // AllSprintStates returns all available sprint states
 func AllSprintStates() []SprintState {
-    return []SprintState{
-        SprintStateActive,
-        SprintStateClosed,
-        SprintStateFuture,
-    }
+	return []SprintState{
+		SprintStateActive,
+		SprintStateClosed,
+		SprintStateFuture,
+	}
 }
 
 // Sprint represents a JIRA sprint with proper time handling
@@ -200,12 +200,16 @@ func (s *Sprint) UnmarshalJSON(data []byte) error {
 		StartDate     string `json:"startDate"`
 		EndDate       string `json:"endDate"`
 		ActivatedDate string `json:"activatedDate"`
+		State         string `json:"state"`
 	}
 
 	temp := &SprintTemp{SprintAlias: (*SprintAlias)(s)}
 	if err := json.Unmarshal(data, temp); err != nil {
 		return err
 	}
+
+	// Convert string state to SprintState enum
+	s.State = SprintState(temp.State).String()
 
 	// Parse dates if they're not empty
 	// Define formats to try
