@@ -128,7 +128,7 @@ func enrichIssuesWithFeatures(issues []Issue, makeGetRequest JiraRequestFunc) er
 	return nil
 }
 
-// FetchOpenSprints retrieves all active sprints for a given board ID.
+// FetchSprints retrieves all active sprints for a given board ID.
 // It uses the provided makeGetRequest function to make the API call to JIRA.
 //
 // Parameters:
@@ -139,7 +139,7 @@ func enrichIssuesWithFeatures(issues []Issue, makeGetRequest JiraRequestFunc) er
 // Returns:
 //   - []Sprint: A slice of Sprint objects representing the active sprints
 //   - error: An error if the request fails or the response cannot be parsed
-func FetchOpenSprints(boardId int, makeGetRequest JiraRequestFunc, options ...SprintRequestOption) ([]Sprint, error) {
+func FetchSprints(boardId int, makeGetRequest JiraRequestFunc, options ...SprintRequestOption) ([]Sprint, error) {
 	// Default options
 	opts := defaultSprintRequestOptions()
 	for _, option := range options {
@@ -151,7 +151,7 @@ func FetchOpenSprints(boardId int, makeGetRequest JiraRequestFunc, options ...Sp
 
 	// Build query parameters
 	params := url.Values{}
-	params.Add("state", SprintStateActive)
+	params.Add("state", opts.state.String())
 	if opts.maxResults > 0 {
 		params.Add("maxResults", strconv.Itoa(opts.maxResults))
 	}
@@ -171,6 +171,7 @@ func FetchOpenSprints(boardId int, makeGetRequest JiraRequestFunc, options ...Sp
 
 // SprintRequestOptions holds optional parameters for sprint requests
 type sprintRequestOptions struct {
+	state      SprintState
 	maxResults int
 	startAt    int
 }
@@ -181,6 +182,7 @@ type SprintRequestOption func(*sprintRequestOptions)
 // defaultSprintRequestOptions returns the default options
 func defaultSprintRequestOptions() *sprintRequestOptions {
 	return &sprintRequestOptions{
+		state:      SprintStateActive,
 		maxResults: 0, // Use API default
 		startAt:    0,
 	}
@@ -197,5 +199,12 @@ func WithMaxResults(max int) SprintRequestOption {
 func WithStartAt(start int) SprintRequestOption {
 	return func(o *sprintRequestOptions) {
 		o.startAt = start
+	}
+}
+
+// WithSprintState sets the state of the sprints to fetch
+func WithSprintState(state SprintState) SprintRequestOption {
+	return func(o *sprintRequestOptions) {
+		o.state = state
 	}
 }

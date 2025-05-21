@@ -40,7 +40,7 @@ func mockOpenSprintsRequest(url string, response any) error {
 func TestFetchOpenSprints_Success(t *testing.T) {
 	boardID := 123
 
-	sprints, err := FetchOpenSprints(boardID, mockOpenSprintsRequest)
+	sprints, err := FetchSprints(boardID, mockOpenSprintsRequest)
 	assert.NoError(t, err)
 	assert.Len(t, sprints, 2)
 	assert.Equal(t, "Sprint 1", sprints[0].Name)
@@ -55,7 +55,7 @@ func TestFetchOpenSprints_APIError(t *testing.T) {
 		return errors.New("API failure")
 	}
 
-	sprints, err := FetchOpenSprints(boardID, mockErrorFunc)
+	sprints, err := FetchSprints(boardID, mockErrorFunc)
 	assert.Error(t, err)
 	assert.Nil(t, sprints)
 }
@@ -72,7 +72,7 @@ func TestFetchOpenSprints_EmptyResponse(t *testing.T) {
 		return errors.New("invalid response type")
 	}
 
-	sprints, err := FetchOpenSprints(boardID, mockEmptyFunc)
+	sprints, err := FetchSprints(boardID, mockEmptyFunc)
 	assert.NoError(t, err)
 	assert.Empty(t, sprints)
 }
@@ -101,7 +101,7 @@ func TestSprintUnmarshalJSON(t *testing.T) {
 		t.Errorf("Expected ID 123, got %d", sprint.ID)
 	}
 
-	if sprint.State != SprintStateActive {
+	if sprint.State != SprintStateActive.String() {
 		t.Errorf("Expected state %s, got %s", SprintStateActive, sprint.State)
 	}
 
@@ -623,7 +623,7 @@ func TestFetchFeatures(t *testing.T) {
 				"EPIC-1": {
 					Key:     "EPIC-1",
 					Summary: "Epic 1",
-					Feature: FeatureResponse {
+					Feature: FeatureResponse{
 						Summary: "Feature 1",
 						Key:     "FEAT-1",
 					},
@@ -631,7 +631,7 @@ func TestFetchFeatures(t *testing.T) {
 				"EPIC-2": {
 					Key:     "EPIC-2",
 					Summary: "Epic 2",
-					Feature: FeatureResponse {
+					Feature: FeatureResponse{
 						Summary: "Feature 2",
 						Key:     "FEAT-2",
 					},
@@ -652,7 +652,7 @@ func TestFetchFeatures(t *testing.T) {
 				"EPIC-1": {
 					Key:     "EPIC-1",
 					Summary: "Epic 1",
-					Feature: FeatureResponse {
+					Feature: FeatureResponse{
 						Summary: "",
 						Key:     "",
 					},

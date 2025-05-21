@@ -153,12 +153,29 @@ type JiraResponse struct {
 	Issues []Issue `json:"issues"`
 }
 
+// Sprint state type
+type SprintState string
+
 // Sprint state constants
 const (
-	SprintStateActive = "active"
-	SprintStateClosed = "closed"
-	SprintStateFuture = "future"
+	SprintStateActive SprintState = "active"
+	SprintStateClosed SprintState = "closed"
+	SprintStateFuture SprintState = "future"
 )
+
+// String returns the string representation of the sprint state
+func (s SprintState) String() string {
+    return string(s)
+}
+
+// AllSprintStates returns all available sprint states
+func AllSprintStates() []SprintState {
+    return []SprintState{
+        SprintStateActive,
+        SprintStateClosed,
+        SprintStateFuture,
+    }
+}
 
 // Sprint represents a JIRA sprint with proper time handling
 type Sprint struct {
@@ -171,8 +188,8 @@ type Sprint struct {
 	ActivatedDate *time.Time `json:"activatedDate,omitempty"`
 	OriginBoardId int        `json:"originBoardId"`
 	// Goal          string `json:"goal"`
-	Synced        bool `json:"synced"`
-	AutoStartStop bool `json:"autoStartStop"`
+	// Synced        bool `json:"synced"`
+	// AutoStartStop bool `json:"autoStartStop"`
 }
 
 // UnmarshalJSON implements custom JSON unmarshaling for Sprint
@@ -235,7 +252,7 @@ func (s *Sprint) UnmarshalJSON(data []byte) error {
 
 // IsActive returns true if the sprint is in active state
 func (s Sprint) IsActive() bool {
-	return s.State == SprintStateActive
+	return s.State == SprintStateActive.String()
 }
 
 // IsCompleted returns true if the sprint has ended

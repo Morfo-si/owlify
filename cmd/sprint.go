@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	boardId       int
-	sprintId      int
+	boardId  int
+	sprintId int
+	state    string
 	features bool
 
 	sprintCmd = &cobra.Command{
@@ -45,7 +46,21 @@ var (
 				return fmt.Errorf("board id is required")
 			}
 
-			sprints, err := jira.FetchOpenSprints(boardId, jira.JIRAGetRequest)
+			// Convert state to string
+			if state == "a" {
+				state = jira.SprintStateActive.String()
+			} else if state == "c" {
+				state = jira.SprintStateClosed.String()
+			} else if state == "f" {
+				state = jira.SprintStateFuture.String()
+			} else {
+				return fmt.Errorf("invalid sprint state: %s", state)
+			}
+
+			sprints, err := jira.FetchSprints(
+				boardId,
+				jira.JIRAGetRequest,
+				jira.WithSprintState(jira.SprintState(state)))
 			if err != nil {
 				return fmt.Errorf("error fetching sprints: %v", err)
 			}
@@ -83,9 +98,10 @@ var (
 func init() {
 
 	// Add required flags
-	sprintCmd.Flags().IntVarP(&sprintId, "sprint", "s", 0, "JIRA sprint ID (required)")
+	sprintCmd.Flags().IntVarP(&sprintId, "id", "i", 0, "JIRA sprint ID (required)")
 	sprintListCmd.Flags().IntVarP(&boardId, "board", "b", 0, "JIRA board ID (required)")
-	sprintGetCmd.Flags().IntVarP(&sprintId, "sprint", "s", 0, "JIRA sprint ID (required)")
+	sprintListCmd.Flags().StringVarP(&state, "state", "s", "active", "Sprint state (a/active, c/closed, f/future)")
+	sprintGetCmd.Flags().IntVarP(&sprintId, "id", "i", 0, "JIRA sprint ID (required)")
 
 	// Add the fetch-features flag
 	sprintCmd.Flags().BoolVar(&features, "features", false, "Also fetch Feature data for epics (default: false)")
