@@ -2,8 +2,9 @@
 
 ## Version 0.0.x
 
-- 1738d92 feat: add support for configuration via .env file
-- e5b591e feat: add version information to the CLI
+- 43515acb87bd3a8197d1da0f9d99df83d22d27c7 refactor: breakup reports into separate modules.
+- 1738d92 feat: add support for configuration via .env file.
+- e5b591e feat: add version information to the CLI.
 - b07c16b Update goreleaser to v2.
 - d42a9d7 Updating Release Notes for 0.0.5.
 
